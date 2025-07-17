@@ -86,6 +86,8 @@ const GameLibrary = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
+  const [isLoadingReview, setIsLoadingReview] = useState(false);
 
   // IGDB API search function
   const searchIGDBGames = useCallback(async (query: string) => {
@@ -254,14 +256,35 @@ const GameLibrary = () => {
     setIsAddGameOpen(false);
   };
 
-  const handleEditGame = (game: Game) => {
+  const handleEditGame = async (game: Game) => {
     setEditingGame(game);
     setSelectedStatus(game.status);
     setGameNotes(game.notes || "");
     setPersonalRating([game.personalRating || 5]);
-    setReviewText("");
     setIsCompleted(game.isCompleted || false);
     setIsFavorite(game.isFavorite || false);
+
+    // Load existing review if the game is marked as played
+    if (game.status === "played") {
+      setIsLoadingReview(true);
+      try {
+        const { data: existingReview } = await supabase
+          .from("game_reviews")
+          .select("review_text")
+          .eq("game_collection_id", game.id)
+          .single();
+
+        setReviewText(existingReview?.review_text || "");
+      } catch (error) {
+        console.error("Error loading review:", error);
+        setReviewText("");
+      } finally {
+        setIsLoadingReview(false);
+      }
+    } else {
+      setReviewText("");
+    }
+
     setIsEditDialogOpen(true);
   };
 
@@ -633,12 +656,24 @@ const GameLibrary = () => {
                           className="w-full"
                         />
                       </div>
-                      <Textarea
-                        placeholder="Write a review (optional)"
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        rows={3}
-                      />
+                      <div className="space-y-2">
+                        <Label>Review</Label>
+                        {isLoadingReview ? (
+                          <div className="flex items-center justify-center p-4 border rounded">
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            <span className="text-sm text-gray-600">
+                              Loading review...
+                            </span>
+                          </div>
+                        ) : (
+                          <Textarea
+                            placeholder="Write a review (optional)"
+                            value={reviewText}
+                            onChange={(e) => setReviewText(e.target.value)}
+                            rows={3}
+                          />
+                        )}
+                      </div>
                     </>
                   )}
 
@@ -724,67 +759,174 @@ const GameLibrary = () => {
                 </div>
               ) : filteredGames.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredGames.map((game) => (
-                    <Card
-                      key={game.id}
-                      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => handleEditGame(game)}
-                    >
-                      <div className="aspect-[3/4] relative">
-                        <img
-                          src={game.cover}
-                          alt={game.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-2 right-2">
-                          {getStatusBadge(game.status)}
-                        </div>
-                        <div className="absolute top-2 left-2 flex gap-1">
-                          {game.isFavorite && (
-                            <div className="bg-red-500 rounded-full p-1">
-                              <Heart className="w-3 h-3 text-white fill-white" />
+                  {filteredGames.map((game) => {
+                    const isFlipped = flippedCards.has(game.id);
+                    return (
+                      <div
+                        key={game.id}
+                        className="perspective-1000 cursor-pointer h-[850px]"
+                        onClick={() => {
+                          const newFlippedCards = new Set(flippedCards);
+                          if (isFlipped) {
+                            newFlippedCards.delete(game.id);
+                          } else {
+                            newFlippedCards.add(game.id);
+                          }
+                          setFlippedCards(newFlippedCards);
+                        }}
+                      >
+                        <div
+                          className={`relative w-full h-full transform-style-preserve-3d transition-transform duration-500 ${
+                            isFlipped ? "rotate-y-180" : ""
+                          }`}
+                        >
+                          {/* Front of card */}
+                          <Card className="absolute inset-0 backface-hidden overflow-hidden hover:shadow-lg transition-shadow">
+                            <div className="aspect-[3/4] relative">
+                              <img
+                                src={game.cover}
+                                alt={game.title}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 right-2">
+                                {getStatusBadge(game.status)}
+                              </div>
+                              <div className="absolute top-2 left-2 flex gap-1">
+                                {game.isFavorite && (
+                                  <div className="bg-red-500 rounded-full p-1">
+                                    <Heart className="w-3 h-3 text-white fill-white" />
+                                  </div>
+                                )}
+                                {game.isCompleted && (
+                                  <div className="bg-green-500 rounded-full p-1">
+                                    <CheckCircle className="w-3 h-3 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute bottom-2 right-2">
+                                <div className="bg-black/50 rounded-full p-1">
+                                  <Edit className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
                             </div>
-                          )}
-                          {game.isCompleted && (
-                            <div className="bg-green-500 rounded-full p-1">
-                              <CheckCircle className="w-3 h-3 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="absolute bottom-2 right-2">
-                          <div className="bg-black/50 rounded-full p-1">
-                            <Edit className="w-3 h-3 text-white" />
-                          </div>
+                            <CardContent className="p-4 flex-1 flex flex-col">
+                              <h3 className="font-semibold text-sm mb-2 line-clamp-2 min-h-[2.5rem]">
+                                {game.title}
+                              </h3>
+
+                              {game.personalRating && (
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="flex">
+                                    {renderStars(game.personalRating)}
+                                  </div>
+                                  <span className="text-sm text-gray-600">
+                                    {game.personalRating}/10
+                                  </span>
+                                </div>
+                              )}
+
+                              {game.notes && (
+                                <p className="text-xs text-gray-600 line-clamp-2 mb-2 flex-1">
+                                  {game.notes}
+                                </p>
+                              )}
+
+                              <p className="text-xs text-gray-500 mt-auto">
+                                Added{" "}
+                                {new Date(game.dateAdded).toLocaleDateString()}
+                              </p>
+                            </CardContent>
+                          </Card>
+
+                          {/* Back of card - Edit form */}
+                          <Card className="absolute inset-0 backface-hidden rotate-y-180 overflow-hidden bg-white">
+                            <CardContent className="p-4 h-full flex flex-col">
+                              <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-semibold text-sm truncate">
+                                  Edit: {game.title}
+                                </h3>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditGame(game);
+                                  }}
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                              </div>
+
+                              <div className="space-y-3 flex-1 overflow-y-auto">
+                                <div>
+                                  <Label className="text-xs">Status</Label>
+                                  <div className="mt-1">
+                                    {getStatusBadge(game.status)}
+                                  </div>
+                                </div>
+
+                                {game.personalRating && (
+                                  <div>
+                                    <Label className="text-xs">Rating</Label>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <div className="flex">
+                                        {renderStars(game.personalRating)}
+                                      </div>
+                                      <span className="text-xs text-gray-600">
+                                        {game.personalRating}/10
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="flex gap-2">
+                                  {game.isFavorite && (
+                                    <div className="flex items-center gap-1">
+                                      <Heart className="w-3 h-3 text-red-500 fill-red-500" />
+                                      <span className="text-xs text-gray-600">
+                                        Favorite
+                                      </span>
+                                    </div>
+                                  )}
+                                  {game.isCompleted && (
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle className="w-3 h-3 text-green-500" />
+                                      <span className="text-xs text-gray-600">
+                                        Completed
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {game.notes && (
+                                  <div>
+                                    <Label className="text-xs">Notes</Label>
+                                    <p className="text-xs text-gray-600 mt-1 line-clamp-3">
+                                      {game.notes}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="mt-4 pt-2 border-t">
+                                <Button
+                                  size="sm"
+                                  className="w-full text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditGame(game);
+                                  }}
+                                >
+                                  Edit Details
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
                         </div>
                       </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-sm mb-2 line-clamp-2">
-                          {game.title}
-                        </h3>
-
-                        {game.personalRating && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="flex">
-                              {renderStars(game.personalRating)}
-                            </div>
-                            <span className="text-sm text-gray-600">
-                              {game.personalRating}/10
-                            </span>
-                          </div>
-                        )}
-
-                        {game.notes && (
-                          <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                            {game.notes}
-                          </p>
-                        )}
-
-                        <p className="text-xs text-gray-500">
-                          Added {new Date(game.dateAdded).toLocaleDateString()}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-16">
