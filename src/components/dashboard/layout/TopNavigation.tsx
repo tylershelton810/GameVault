@@ -15,9 +15,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Bell, Home, Search, Settings, User } from "lucide-react";
+import { Bell, Home, Search, Settings, User, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../../supabase/auth";
+import { useRef, useState } from "react";
 
 interface TopNavigationProps {
   onSearch?: (query: string) => void;
@@ -31,7 +32,46 @@ const TopNavigation = ({
     { id: "2", title: "Meeting reminder" },
   ],
 }: TopNavigationProps) => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateProfilePicture } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUpdatingPicture, setIsUpdatingPicture] = useState(false);
+
+  const handleProfilePictureUpdate = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+
+    try {
+      setIsUpdatingPicture(true);
+      await updateProfilePicture(file);
+      // Reset the input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("Error updating profile picture:", error);
+      alert("Failed to update profile picture. Please try again.");
+    } finally {
+      setIsUpdatingPicture(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   if (!user) return null;
 
@@ -101,7 +141,10 @@ const TopNavigation = ({
           <DropdownMenuTrigger asChild>
             <Avatar className="h-8 w-8 hover:cursor-pointer">
               <AvatarImage
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
+                src={
+                  user.user_metadata?.avatar_url ||
+                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
+                }
                 alt={user.email || ""}
               />
               <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
@@ -119,6 +162,14 @@ const TopNavigation = ({
               <User className="mr-2 h-4 w-4" />
               Profile
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={triggerFileInput}
+              disabled={isUpdatingPicture}
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              {isUpdatingPicture ? "Updating..." : "Update Picture"}
+            </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               Settings
@@ -132,6 +183,13 @@ const TopNavigation = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleProfilePictureUpdate}
+          className="hidden"
+        />
       </div>
     </div>
   );

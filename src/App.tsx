@@ -7,6 +7,7 @@ import Dashboard from "./components/pages/dashboard";
 import Success from "./components/pages/success";
 import Home from "./components/pages/home";
 import GameLibrary from "./components/pages/GameLibrary";
+import Friends from "./components/pages/Friends";
 import { AuthProvider, useAuth } from "../supabase/auth";
 import { Toaster } from "./components/ui/toaster";
 import { LoadingScreen, LoadingSpinner } from "./components/ui/loading-spinner";
@@ -46,6 +47,14 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <GameLibrary />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/friends"
+          element={
+            <PrivateRoute>
+              <Friends />
             </PrivateRoute>
           }
         />

@@ -54,7 +54,10 @@ export default function LandingPage() {
                   <DropdownMenuTrigger asChild>
                     <Avatar className="h-8 w-8 hover:cursor-pointer">
                       <AvatarImage
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
+                        src={
+                          user.user_metadata?.avatar_url ||
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
+                        }
                         alt={user.email || ""}
                       />
                       <AvatarFallback>

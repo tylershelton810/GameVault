@@ -162,6 +162,7 @@ export type Database = {
           hours_played: number | null
           id: string
           igdb_game_id: number
+          is_completed: boolean | null
           is_favorite: boolean | null
           personal_notes: string | null
           personal_rating: number | null
@@ -180,6 +181,7 @@ export type Database = {
           hours_played?: number | null
           id?: string
           igdb_game_id: number
+          is_completed?: boolean | null
           is_favorite?: boolean | null
           personal_notes?: string | null
           personal_rating?: number | null
@@ -198,6 +200,7 @@ export type Database = {
           hours_played?: number | null
           id?: string
           igdb_game_id?: number
+          is_completed?: boolean | null
           is_favorite?: boolean | null
           personal_notes?: string | null
           personal_rating?: number | null

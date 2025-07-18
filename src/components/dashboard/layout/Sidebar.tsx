@@ -58,6 +58,9 @@ const Sidebar = ({
       case "Game Library":
         navigate("/game-library");
         break;
+      case "Friends":
+        navigate("/friends");
+        break;
       default:
         // For other items, just update the active state for now
         break;

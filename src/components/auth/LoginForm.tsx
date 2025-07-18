@@ -17,7 +17,7 @@ export default function LoginForm() {
     e.preventDefault();
     try {
       await signIn(email, password);
-      navigate("/");
+      navigate("/dashboard");
     } catch (error) {
       setError("Invalid email or password");
     }
@@ -28,7 +28,12 @@ export default function LoginForm() {
       <div className="bg-white rounded-2xl shadow-sm p-8 w-full max-w-md mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+            <Label
+              htmlFor="email"
+              className="text-sm font-medium text-gray-700"
+            >
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -41,8 +46,16 @@ export default function LoginForm() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
-              <Link to="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700"
+              >
+                Password
+              </Label>
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-blue-600 hover:text-blue-500"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -57,17 +70,19 @@ export default function LoginForm() {
             />
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full h-12 rounded-full bg-black text-white hover:bg-gray-800 text-sm font-medium"
           >
             Sign in
           </Button>
-      
-      
+
           <div className="text-sm text-center text-gray-600 mt-6">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-blue-600 hover:underline font-medium">
+            <Link
+              to="/signup"
+              className="text-blue-600 hover:underline font-medium"
+            >
               Sign up
             </Link>
           </div>
