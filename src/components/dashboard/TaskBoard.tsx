@@ -1,16 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Heart, MessageCircle, X } from "lucide-react";
+import { PlusCircle, Heart, MessageCircle, Send } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { motion } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "../../../supabase/supabase";
@@ -63,8 +56,11 @@ const SocialTimeline = ({
   const [loading, setLoading] = useState(true);
   const [friends, setFriends] = useState<string[]>([]);
   const [likingActivity, setLikingActivity] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState("");
-  const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
+  const [submittingComment, setSubmittingComment] = useState<string | null>(
+    null,
+  );
+  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
 
   // Fetch user's friends
   const fetchFriends = useCallback(async () => {
@@ -402,9 +398,10 @@ const SocialTimeline = ({
     activityId: string,
     commentText: string,
   ) => {
-    if (!user || !commentText.trim() || submittingComment) return;
+    if (!user || !commentText.trim() || submittingComment === activityId)
+      return;
 
-    setSubmittingComment(true);
+    setSubmittingComment(activityId);
 
     try {
       const { error } = await supabase.from("activity_interactions").insert({
@@ -416,7 +413,7 @@ const SocialTimeline = ({
 
       if (error) {
         console.error("Error adding comment:", error);
-        setSubmittingComment(false);
+        setSubmittingComment(null);
         return;
       }
 
@@ -446,48 +443,63 @@ const SocialTimeline = ({
         ),
       );
 
-      setCommentText("");
+      // Clear the comment text for this activity
+      setCommentTexts((prev) => ({ ...prev, [activityId]: "" }));
     } catch (error) {
       console.error("Error handling comment:", error);
     } finally {
-      setSubmittingComment(false);
+      setSubmittingComment(null);
     }
   };
 
-  // Comments Dialog Component
-  const CommentsDialog = ({ activity }: { activity: Activity }) => {
-    const [localCommentText, setLocalCommentText] = useState("");
+  // Toggle comments visibility
+  const toggleComments = (activityId: string) => {
+    setShowComments((prev) => ({
+      ...prev,
+      [activityId]: !prev[activityId],
+    }));
+  };
+
+  // Update comment text for specific activity
+  const updateCommentText = (activityId: string, text: string) => {
+    setCommentTexts((prev) => ({ ...prev, [activityId]: text }));
+  };
+
+  // Comments Section Component
+  const CommentsSection = ({ activity }: { activity: Activity }) => {
+    const currentCommentText = commentTexts[activity.id] || "";
+    const isCommentsVisible = showComments[activity.id] || false;
+    const isSubmitting = submittingComment === activity.id;
 
     const handleSubmitComment = async () => {
-      if (!localCommentText.trim()) return;
-      await handleCommentActivity(activity.id, localCommentText);
-      setLocalCommentText("");
+      if (!currentCommentText.trim()) return;
+      await handleCommentActivity(activity.id, currentCommentText);
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmitComment();
+      }
     };
 
     return (
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            Comments
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Comments List */}
-          <ScrollArea className="max-h-60">
-            <div className="space-y-3 pr-4">
-              {activity.comments && activity.comments.length > 0 ? (
-                activity.comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
+      <div className="mt-3 border-t border-gray-100 pt-3">
+        {/* Comments List */}
+        {isCommentsVisible && (
+          <div className="mb-3">
+            {activity.comments && activity.comments.length > 0 ? (
+              <div className="space-y-3 max-h-48 overflow-y-auto">
+                {activity.comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-2">
                     <img
                       src={comment.user.avatar}
                       alt={comment.user.name}
-                      className="w-8 h-8 rounded-full flex-shrink-0"
+                      className="w-6 h-6 rounded-full flex-shrink-0 mt-0.5"
                     />
-                    <div className="flex-1">
+                    <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm">
+                        <span className="font-medium text-xs text-gray-900">
                           {comment.user.name}
                         </span>
                         <span className="text-xs text-gray-500">
@@ -497,35 +509,50 @@ const SocialTimeline = ({
                       <p className="text-sm text-gray-700">{comment.text}</p>
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No comments yet. Be the first to comment!
-                </p>
-              )}
-            </div>
-          </ScrollArea>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-2">
+                No comments yet. Be the first to comment!
+              </p>
+            )}
+          </div>
+        )}
 
-          {/* Add Comment */}
-          <div className="space-y-2">
+        {/* Add Comment Input */}
+        <div className="flex gap-2 items-start">
+          <img
+            src={
+              user?.user_metadata?.avatar_url ||
+              `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
+            }
+            alt="Your avatar"
+            className="w-6 h-6 rounded-full flex-shrink-0 mt-1"
+          />
+          <div className="flex-1 flex gap-2">
             <Textarea
               placeholder="Write a comment..."
-              value={localCommentText}
-              onChange={(e) => setLocalCommentText(e.target.value)}
-              className="min-h-[80px] resize-none"
+              value={currentCommentText}
+              onChange={(e) => updateCommentText(activity.id, e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="min-h-[36px] max-h-24 resize-none text-sm py-2 px-3"
+              rows={1}
             />
-            <div className="flex justify-end">
-              <Button
-                onClick={handleSubmitComment}
-                disabled={!localCommentText.trim() || submittingComment}
-                size="sm"
-              >
-                {submittingComment ? "Posting..." : "Post Comment"}
-              </Button>
-            </div>
+            <Button
+              onClick={handleSubmitComment}
+              disabled={!currentCommentText.trim() || isSubmitting}
+              size="sm"
+              className="h-9 px-3"
+            >
+              {isSubmitting ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
           </div>
         </div>
-      </DialogContent>
+      </div>
     );
   };
 
@@ -687,27 +714,30 @@ const SocialTimeline = ({
                         </span>
                       </Button>
 
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-gray-500 hover:text-blue-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                          >
-                            <MessageCircle className="w-4 h-4 mr-1" />
-                            <span className="text-xs">
-                              {activity.comments_count || 0}
-                            </span>
-                          </Button>
-                        </DialogTrigger>
-                        <CommentsDialog activity={activity} />
-                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-2 transition-colors ${
+                          showComments[activity.id]
+                            ? "text-blue-500 hover:text-blue-600"
+                            : "text-gray-500 hover:text-blue-500"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleComments(activity.id);
+                        }}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1" />
+                        <span className="text-xs">
+                          {activity.comments_count || 0}
+                        </span>
+                      </Button>
                     </div>
                   </div>
                 </div>
+
+                {/* Comments Section */}
+                <CommentsSection activity={activity} />
               </Card>
             </motion.div>
           ))
