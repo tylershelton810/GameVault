@@ -63,7 +63,7 @@ export default function SignUpForm() {
         description: "Please check your email to verify your account.",
         duration: 5000,
       });
-      navigate("/login");
+      navigate("/social-timeline");
     } catch (error) {
       setError("Error creating account");
     } finally {

@@ -28,9 +28,12 @@ interface SidebarProps {
 import { useNavigate } from "react-router-dom";
 
 const defaultNavItems: NavItem[] = [
-  { icon: <Home size={20} />, label: "Dashboard", isActive: true },
+  {
+    icon: <FolderKanban size={20} />,
+    label: "Social Timeline",
+    isActive: true,
+  },
   { icon: <LayoutDashboard size={20} />, label: "Game Library" },
-  { icon: <FolderKanban size={20} />, label: "Social Timeline" },
   { icon: <Calendar size={20} />, label: "Discover" },
   { icon: <Users size={20} />, label: "Friends" },
 ];
@@ -42,7 +45,7 @@ const defaultBottomItems: NavItem[] = [
 
 const Sidebar = ({
   items = defaultNavItems,
-  activeItem = "Home",
+  activeItem = "Social Timeline",
   onItemClick = () => {},
 }: SidebarProps) => {
   const navigate = useNavigate();
@@ -52,8 +55,8 @@ const Sidebar = ({
 
     // Handle navigation based on the item clicked
     switch (label) {
-      case "Dashboard":
-        navigate("/dashboard");
+      case "Social Timeline":
+        navigate("/social-timeline");
         break;
       case "Game Library":
         navigate("/game-library");

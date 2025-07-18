@@ -422,30 +422,81 @@ const GameLibrary = () => {
         date_added: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      const { data: insertedGameData, error } = await supabase
         .from("game_collections")
-        .insert([gameData]);
+        .insert([gameData])
+        .select()
+        .single();
 
       if (error) {
         console.error("Error adding game:", error);
         return;
       }
 
+      // Log activity to activity_feed
+      await supabase.from("activity_feed").insert({
+        user_id: user.id,
+        activity_type: "game_added",
+        game_collection_id: insertedGameData.id,
+        activity_data: {
+          game_title: selectedGame.name,
+          status: selectedStatus,
+          igdb_game_id: selectedGame.id,
+        },
+      });
+
+      // If the game is marked as completed, log completion activity
+      if (isCompleted) {
+        await supabase.from("activity_feed").insert({
+          user_id: user.id,
+          activity_type: "game_completed",
+          game_collection_id: insertedGameData.id,
+          activity_data: {
+            game_title: selectedGame.name,
+            igdb_game_id: selectedGame.id,
+          },
+        });
+      }
+
+      // If there's a rating, log rating activity
+      if (selectedStatus === "played" && personalRating[0]) {
+        await supabase.from("activity_feed").insert({
+          user_id: user.id,
+          activity_type: "game_rated",
+          game_collection_id: insertedGameData.id,
+          activity_data: {
+            game_title: selectedGame.name,
+            rating: personalRating[0],
+            igdb_game_id: selectedGame.id,
+          },
+        });
+      }
+
       // If there's a review and rating, create a review entry
       if (selectedStatus === "played" && reviewText.trim()) {
-        const { data: insertedGame } = await supabase
-          .from("game_collections")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("igdb_game_id", selectedGame.id)
-          .single();
-
-        if (insertedGame) {
-          await supabase.from("game_reviews").insert({
+        const { data: reviewData, error: reviewError } = await supabase
+          .from("game_reviews")
+          .insert({
             user_id: user.id,
-            game_collection_id: insertedGame.id,
+            game_collection_id: insertedGameData.id,
             review_text: reviewText,
             rating: personalRating[0],
+          })
+          .select()
+          .single();
+
+        if (!reviewError && reviewData) {
+          // Log review activity
+          await supabase.from("activity_feed").insert({
+            user_id: user.id,
+            activity_type: "review_posted",
+            game_collection_id: insertedGameData.id,
+            game_review_id: reviewData.id,
+            activity_data: {
+              game_title: selectedGame.name,
+              rating: personalRating[0],
+              igdb_game_id: selectedGame.id,
+            },
           });
         }
       }
@@ -512,6 +563,10 @@ const GameLibrary = () => {
 
     setIsAddingGame(true);
     try {
+      const previousStatus = editingGame.status;
+      const previousRating = editingGame.personalRating;
+      const previousCompleted = editingGame.isCompleted;
+
       const updateData = {
         status: selectedStatus,
         personal_notes: gameNotes || null,
@@ -531,6 +586,37 @@ const GameLibrary = () => {
         return;
       }
 
+      // Log completion activity if game was just marked as completed
+      if (isCompleted && !previousCompleted) {
+        await supabase.from("activity_feed").insert({
+          user_id: user.id,
+          activity_type: "game_completed",
+          game_collection_id: editingGame.id,
+          activity_data: {
+            game_title: editingGame.title,
+            igdb_game_id: editingGame.igdbId,
+          },
+        });
+      }
+
+      // Log rating activity if rating was added or changed
+      if (
+        selectedStatus === "played" &&
+        personalRating[0] &&
+        personalRating[0] !== previousRating
+      ) {
+        await supabase.from("activity_feed").insert({
+          user_id: user.id,
+          activity_type: "game_rated",
+          game_collection_id: editingGame.id,
+          activity_data: {
+            game_title: editingGame.title,
+            rating: personalRating[0],
+            igdb_game_id: editingGame.igdbId,
+          },
+        });
+      }
+
       // Handle review update/creation
       if (selectedStatus === "played" && reviewText.trim()) {
         const { data: existingReview } = await supabase
@@ -540,7 +626,7 @@ const GameLibrary = () => {
           .single();
 
         if (existingReview) {
-          await supabase
+          const { error: reviewUpdateError } = await supabase
             .from("game_reviews")
             .update({
               review_text: reviewText,
@@ -548,13 +634,69 @@ const GameLibrary = () => {
               updated_at: new Date().toISOString(),
             })
             .eq("id", existingReview.id);
+
+          if (!reviewUpdateError) {
+            // Log review update activity
+            const { error: activityError } = await supabase
+              .from("activity_feed")
+              .insert({
+                user_id: user.id,
+                activity_type: "review_posted",
+                game_collection_id: editingGame.id,
+                game_review_id: existingReview.id,
+                activity_data: {
+                  game_title: editingGame.title,
+                  rating: personalRating[0],
+                  igdb_game_id: editingGame.igdbId,
+                },
+              });
+
+            if (activityError) {
+              console.error(
+                "Error logging review update activity:",
+                activityError,
+              );
+            }
+          } else {
+            console.error("Error updating review:", reviewUpdateError);
+          }
         } else {
-          await supabase.from("game_reviews").insert({
-            user_id: user.id,
-            game_collection_id: editingGame.id,
-            review_text: reviewText,
-            rating: personalRating[0],
-          });
+          const { data: newReview, error: reviewInsertError } = await supabase
+            .from("game_reviews")
+            .insert({
+              user_id: user.id,
+              game_collection_id: editingGame.id,
+              review_text: reviewText,
+              rating: personalRating[0],
+            })
+            .select()
+            .single();
+
+          if (!reviewInsertError && newReview) {
+            // Log new review activity
+            const { error: activityError } = await supabase
+              .from("activity_feed")
+              .insert({
+                user_id: user.id,
+                activity_type: "review_posted",
+                game_collection_id: editingGame.id,
+                game_review_id: newReview.id,
+                activity_data: {
+                  game_title: editingGame.title,
+                  rating: personalRating[0],
+                  igdb_game_id: editingGame.igdbId,
+                },
+              });
+
+            if (activityError) {
+              console.error(
+                "Error logging new review activity:",
+                activityError,
+              );
+            }
+          } else {
+            console.error("Error creating review:", reviewInsertError);
+          }
         }
       }
 

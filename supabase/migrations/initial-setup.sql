@@ -156,16 +156,27 @@ CREATE TABLE IF NOT EXISTS public.activity_interactions (
     user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     interaction_type text NOT NULL CHECK (interaction_type IN ('like', 'comment')),
     comment_text text,
-    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    UNIQUE(activity_id, user_id, interaction_type)
+    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Notifications table for user notifications
+CREATE TABLE IF NOT EXISTS public.notifications (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    from_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    activity_id uuid REFERENCES public.activity_feed(id) ON DELETE CASCADE,
+    interaction_id uuid REFERENCES public.activity_interactions(id) ON DELETE CASCADE,
+    notification_type text NOT NULL CHECK (notification_type IN ('like', 'comment')),
+    is_read boolean DEFAULT false,
+    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
 -- Enable realtime for all tables
-alter publication supabase_realtime add table game_collections;
 alter publication supabase_realtime add table game_reviews;
 alter publication supabase_realtime add table friendships;
 alter publication supabase_realtime add table activity_feed;
 alter publication supabase_realtime add table activity_interactions;
+alter publication supabase_realtime add table notifications;
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_game_collections_user_id ON public.game_collections(user_id);
@@ -176,4 +187,7 @@ CREATE INDEX IF NOT EXISTS idx_friendships_requester ON public.friendships(reque
 CREATE INDEX IF NOT EXISTS idx_friendships_addressee ON public.friendships(addressee_id);
 CREATE INDEX IF NOT EXISTS idx_activity_feed_user_id ON public.activity_feed(user_id);
 CREATE INDEX IF NOT EXISTS idx_activity_feed_created_at ON public.activity_feed(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_activity_interactions_activity_id ON public.activity_interactions(activity_id); 
+CREATE INDEX IF NOT EXISTS idx_activity_interactions_activity_id ON public.activity_interactions(activity_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON public.notifications(is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON public.notifications(created_at DESC); 

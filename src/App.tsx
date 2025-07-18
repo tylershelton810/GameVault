@@ -8,6 +8,7 @@ import Success from "./components/pages/success";
 import Home from "./components/pages/home";
 import GameLibrary from "./components/pages/GameLibrary";
 import Friends from "./components/pages/Friends";
+import SocialTimeline from "./components/pages/SocialTimeline";
 import { AuthProvider, useAuth } from "../supabase/auth";
 import { Toaster } from "./components/ui/toaster";
 import { LoadingScreen, LoadingSpinner } from "./components/ui/loading-spinner";
@@ -37,7 +38,15 @@ function AppRoutes() {
           path="/dashboard"
           element={
             <PrivateRoute>
-              <Dashboard />
+              <SocialTimeline />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/social-timeline"
+          element={
+            <PrivateRoute>
+              <SocialTimeline />
             </PrivateRoute>
           }
         />
