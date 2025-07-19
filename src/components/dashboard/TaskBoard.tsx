@@ -27,6 +27,7 @@ interface Activity {
   comments_count?: number;
   user_has_liked?: boolean;
   comments?: Comment[];
+  game_cover_url?: string;
 }
 
 interface Comment {
@@ -39,6 +40,131 @@ interface Comment {
   text: string;
   timestamp: string;
 }
+
+// Comments Section Component - moved outside to prevent recreation
+const CommentsSection = ({
+  activity,
+  user,
+  commentTexts,
+  showComments,
+  showCommentInput,
+  submittingComment,
+  updateCommentText,
+  handleCommentActivity,
+}: {
+  activity: Activity;
+  user: any;
+  commentTexts: Record<string, string>;
+  showComments: Record<string, boolean>;
+  showCommentInput: Record<string, boolean>;
+  submittingComment: string | null;
+  updateCommentText: (activityId: string, text: string) => void;
+  handleCommentActivity: (
+    activityId: string,
+    commentText: string,
+  ) => Promise<void>;
+}) => {
+  const currentCommentText = commentTexts[activity.id] || "";
+  const isCommentsVisible = showComments[activity.id] || false;
+  const isCommentInputVisible = showCommentInput[activity.id] || false;
+  const isSubmitting = submittingComment === activity.id;
+
+  const handleSubmitComment = async () => {
+    if (!currentCommentText.trim()) return;
+    await handleCommentActivity(activity.id, currentCommentText);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmitComment();
+    }
+  };
+
+  const handleCommentTextChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    updateCommentText(activity.id, e.target.value);
+  };
+
+  if (!isCommentsVisible && !isCommentInputVisible) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 border-t border-gray-100 pt-3">
+      {/* Comments List */}
+      {isCommentsVisible && (
+        <div className="mb-3">
+          {activity.comments && activity.comments.length > 0 ? (
+            <div className="space-y-3 max-h-48 overflow-y-auto">
+              {activity.comments.map((comment) => (
+                <div key={comment.id} className="flex gap-2">
+                  <img
+                    src={comment.user.avatar}
+                    alt={comment.user.name}
+                    className="w-6 h-6 rounded-full flex-shrink-0 mt-0.5"
+                  />
+                  <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-xs text-gray-900">
+                        {comment.user.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {comment.timestamp}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{comment.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 text-center py-2">
+              No comments yet. Be the first to comment!
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Add Comment Input - Only show when comment input is visible */}
+      {isCommentInputVisible && (
+        <div className="flex gap-2 items-start">
+          <img
+            src={
+              user?.user_metadata?.avatar_url ||
+              `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
+            }
+            alt="Your avatar"
+            className="w-6 h-6 rounded-full flex-shrink-0 mt-1"
+          />
+          <div className="flex-1 flex gap-2">
+            <Textarea
+              placeholder="Write a comment..."
+              value={currentCommentText}
+              onChange={handleCommentTextChange}
+              onKeyDown={handleKeyPress}
+              className="min-h-[36px] max-h-24 resize-none text-sm py-2 px-3"
+              rows={1}
+            />
+            <Button
+              onClick={handleSubmitComment}
+              disabled={!currentCommentText.trim() || isSubmitting}
+              size="sm"
+              className="h-9 px-3"
+            >
+              {isSubmitting ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface SocialTimelineProps {
   activities?: Activity[];
@@ -61,6 +187,9 @@ const SocialTimeline = ({
     null,
   );
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [showCommentInput, setShowCommentInput] = useState<
+    Record<string, boolean>
+  >({});
 
   // Fetch user's friends
   const fetchFriends = useCallback(async () => {
@@ -125,7 +254,8 @@ const SocialTimeline = ({
           ),
           game_collection:game_collections(
             game_title,
-            personal_rating
+            personal_rating,
+            game_cover_url
           ),
           game_review:game_reviews(
             review_text,
@@ -273,6 +403,9 @@ const SocialTimeline = ({
             comments_count: comments.length,
             user_has_liked: likeInfo.userLiked,
             comments,
+            game_cover_url:
+              activity.game_collection?.game_cover_url ||
+              activityData.game_cover_url,
           };
         }) || [];
 
@@ -458,102 +591,16 @@ const SocialTimeline = ({
       ...prev,
       [activityId]: !prev[activityId],
     }));
+    // Also show the comment input when comments are toggled
+    setShowCommentInput((prev) => ({
+      ...prev,
+      [activityId]: !prev[activityId],
+    }));
   };
 
   // Update comment text for specific activity
   const updateCommentText = (activityId: string, text: string) => {
     setCommentTexts((prev) => ({ ...prev, [activityId]: text }));
-  };
-
-  // Comments Section Component
-  const CommentsSection = ({ activity }: { activity: Activity }) => {
-    const currentCommentText = commentTexts[activity.id] || "";
-    const isCommentsVisible = showComments[activity.id] || false;
-    const isSubmitting = submittingComment === activity.id;
-
-    const handleSubmitComment = async () => {
-      if (!currentCommentText.trim()) return;
-      await handleCommentActivity(activity.id, currentCommentText);
-    };
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSubmitComment();
-      }
-    };
-
-    return (
-      <div className="mt-3 border-t border-gray-100 pt-3">
-        {/* Comments List */}
-        {isCommentsVisible && (
-          <div className="mb-3">
-            {activity.comments && activity.comments.length > 0 ? (
-              <div className="space-y-3 max-h-48 overflow-y-auto">
-                {activity.comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-2">
-                    <img
-                      src={comment.user.avatar}
-                      alt={comment.user.name}
-                      className="w-6 h-6 rounded-full flex-shrink-0 mt-0.5"
-                    />
-                    <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-xs text-gray-900">
-                          {comment.user.name}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {comment.timestamp}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700">{comment.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 text-center py-2">
-                No comments yet. Be the first to comment!
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Add Comment Input */}
-        <div className="flex gap-2 items-start">
-          <img
-            src={
-              user?.user_metadata?.avatar_url ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
-            }
-            alt="Your avatar"
-            className="w-6 h-6 rounded-full flex-shrink-0 mt-1"
-          />
-          <div className="flex-1 flex gap-2">
-            <Textarea
-              placeholder="Write a comment..."
-              value={currentCommentText}
-              onChange={(e) => updateCommentText(activity.id, e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="min-h-[36px] max-h-24 resize-none text-sm py-2 px-3"
-              rows={1}
-            />
-            <Button
-              onClick={handleSubmitComment}
-              disabled={!currentCommentText.trim() || isSubmitting}
-              size="sm"
-              className="h-9 px-3"
-            >
-              {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   useEffect(() => {
@@ -672,21 +719,6 @@ const SocialTimeline = ({
                     <p className="text-sm text-gray-600 mb-2">
                       {activity.description}
                     </p>
-                    {activity.game && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                        <span>🎮</span>
-                        <span>{activity.game}</span>
-                        {activity.rating && (
-                          <>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <span>⭐</span>
-                              <span>{activity.rating}/10</span>
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    )}
                     <div className="flex items-center gap-4 mt-2">
                       <Button
                         variant="ghost"
@@ -734,10 +766,34 @@ const SocialTimeline = ({
                       </Button>
                     </div>
                   </div>
+
+                  {/* Game Cover Image */}
+                  {activity.game_cover_url && (
+                    <div className="flex-shrink-0">
+                      <img
+                        src={activity.game_cover_url}
+                        alt={activity.game || "Game cover"}
+                        className="w-16 h-20 rounded-lg object-cover border border-gray-200 shadow-sm"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Comments Section */}
-                <CommentsSection activity={activity} />
+                <CommentsSection
+                  activity={activity}
+                  user={user}
+                  commentTexts={commentTexts}
+                  showComments={showComments}
+                  showCommentInput={showCommentInput}
+                  submittingComment={submittingComment}
+                  updateCommentText={updateCommentText}
+                  handleCommentActivity={handleCommentActivity}
+                />
               </Card>
             </motion.div>
           ))

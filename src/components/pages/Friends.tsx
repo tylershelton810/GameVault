@@ -14,6 +14,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   UserPlus,
   Search,
   Users,
@@ -24,6 +31,7 @@ import {
   Gamepad2,
   Eye,
   Loader2,
+  Filter,
 } from "lucide-react";
 import Sidebar from "@/components/dashboard/layout/Sidebar";
 import TopNavigation from "@/components/dashboard/layout/TopNavigation";
@@ -64,11 +72,15 @@ interface SharedGame {
   igdb_game_id: number;
   userRating?: number;
   userStatus: string;
+  userIsFavorite?: boolean;
+  userIsCompleted?: boolean;
   friends: {
     name: string;
     rating?: number;
     status: string;
     avatar_url?: string;
+    isFavorite?: boolean;
+    isCompleted?: boolean;
   }[];
 }
 
@@ -89,6 +101,9 @@ const Friends = () => {
   const [sharedGames, setSharedGames] = useState<SharedGame[]>([]);
   const [isLoadingSharedGames, setIsLoadingSharedGames] = useState(false);
   const [isViewingFriend, setIsViewingFriend] = useState(false);
+  const [sharedGamesSortBy, setSharedGamesSortBy] =
+    useState<string>("alphabetical");
+  const [sharedGamesSearchTerm, setSharedGamesSearchTerm] = useState("");
 
   // Search for users to add as friends
   const searchUsers = useCallback(
@@ -322,11 +337,11 @@ const Friends = () => {
         return;
       }
 
-      // Get user's games
+      // Get user's games with additional fields
       const { data: userGames } = await supabase
         .from("game_collections")
         .select(
-          "igdb_game_id, game_title, game_cover_url, personal_rating, status",
+          "igdb_game_id, game_title, game_cover_url, personal_rating, status, is_favorite, is_completed",
         )
         .eq("user_id", user.id);
 
@@ -342,7 +357,9 @@ const Friends = () => {
       for (const friend of acceptedFriends) {
         const { data: friendGames } = await supabase
           .from("game_collections")
-          .select("igdb_game_id, personal_rating, status")
+          .select(
+            "igdb_game_id, personal_rating, status, is_favorite, is_completed",
+          )
           .eq("user_id", friend.id);
 
         if (!friendGames) continue;
@@ -364,6 +381,8 @@ const Friends = () => {
                 igdb_game_id: gameId,
                 userRating: userGame.personal_rating || undefined,
                 userStatus: userGame.status,
+                userIsFavorite: userGame.is_favorite || false,
+                userIsCompleted: userGame.is_completed || false,
                 friends: [],
               });
             }
@@ -374,6 +393,8 @@ const Friends = () => {
               rating: friendGame.personal_rating || undefined,
               status: friendGame.status,
               avatar_url: friend.avatar_url,
+              isFavorite: friendGame.is_favorite || false,
+              isCompleted: friendGame.is_completed || false,
             });
           }
         }
@@ -671,9 +692,21 @@ const Friends = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Search friends..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={
+                    activeTab === "shared"
+                      ? "Search games..."
+                      : "Search friends..."
+                  }
+                  value={
+                    activeTab === "shared" ? sharedGamesSearchTerm : searchTerm
+                  }
+                  onChange={(e) => {
+                    if (activeTab === "shared") {
+                      setSharedGamesSearchTerm(e.target.value);
+                    } else {
+                      setSearchTerm(e.target.value);
+                    }
+                  }}
                   className="pl-10"
                 />
               </div>
@@ -889,6 +922,32 @@ const Friends = () => {
               </TabsContent>
 
               <TabsContent value="shared" className="mt-6">
+                {activeTab === "shared" && (
+                  <div className="flex gap-4 mb-6">
+                    <Select
+                      value={sharedGamesSortBy}
+                      onValueChange={setSharedGamesSortBy}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alphabetical">
+                          Alphabetical
+                        </SelectItem>
+                        <SelectItem value="rating">Rating</SelectItem>
+                        <SelectItem value="favoritesRating">
+                          Favorites then Rating
+                        </SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline">
+                      <Filter className="w-4 h-4 mr-2" />
+                      Filter
+                    </Button>
+                  </div>
+                )}
                 {isLoadingSharedGames ? (
                   <div className="flex justify-center items-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin" />
@@ -896,109 +955,174 @@ const Friends = () => {
                       Loading shared games...
                     </span>
                   </div>
-                ) : sharedGames.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {sharedGames.map((game) => (
-                      <Card
-                        key={game.igdb_game_id}
-                        className="overflow-hidden hover:shadow-lg transition-shadow"
-                      >
-                        <div className="aspect-[3/4] relative">
-                          <img
-                            src={game.game_cover_url}
-                            alt={game.game_title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <CardContent className="p-4">
-                          <h3 className="font-semibold text-sm mb-3 line-clamp-2">
-                            {game.game_title}
-                          </h3>
-                          <div className="space-y-2">
-                            {/* Your rating */}
-                            <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
-                              <div className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage
-                                      src={
-                                        user?.user_metadata?.avatar_url ||
-                                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
-                                      }
-                                      alt="You"
-                                    />
-                                    <AvatarFallback className="text-[8px]">
-                                      {(user?.user_metadata?.full_name ||
-                                        user?.email ||
-                                        "Y")[0].toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-blue-700 font-medium">
-                                    You
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  {game.userRating && (
-                                    <span className="text-blue-700 font-medium">
-                                      {game.userRating}/10
-                                    </span>
-                                  )}
-                                  {getStatusBadge(game.userStatus)}
-                                </div>
+                ) : (
+                  (() => {
+                    // Filter and sort shared games
+                    const filteredSharedGames = sharedGames.filter((game) =>
+                      game.game_title
+                        .toLowerCase()
+                        .includes(sharedGamesSearchTerm.toLowerCase()),
+                    );
+
+                    const sortedSharedGames = [...filteredSharedGames].sort(
+                      (a, b) => {
+                        switch (sharedGamesSortBy) {
+                          case "alphabetical":
+                            return a.game_title.localeCompare(b.game_title);
+                          case "rating":
+                            const ratingA = a.userRating || 0;
+                            const ratingB = b.userRating || 0;
+                            return ratingB - ratingA; // Highest rating first
+                          case "favoritesRating":
+                            // First sort by favorites (favorites first), then by rating
+                            if (a.userIsFavorite && !b.userIsFavorite)
+                              return -1;
+                            if (!a.userIsFavorite && b.userIsFavorite) return 1;
+                            if (a.userIsFavorite && b.userIsFavorite) {
+                              const ratingA = a.userRating || 0;
+                              const ratingB = b.userRating || 0;
+                              return ratingB - ratingA;
+                            }
+                            return 0;
+                          case "completed":
+                            // Completed games first
+                            if (a.userIsCompleted && !b.userIsCompleted)
+                              return -1;
+                            if (!a.userIsCompleted && b.userIsCompleted)
+                              return 1;
+                            return 0;
+                          default:
+                            return a.game_title.localeCompare(b.game_title);
+                        }
+                      },
+                    );
+
+                    return sortedSharedGames.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {sortedSharedGames.map((game) => (
+                          <Card
+                            key={game.igdb_game_id}
+                            className="overflow-hidden hover:shadow-lg transition-shadow"
+                          >
+                            <div className="aspect-[3/4] relative">
+                              <img
+                                src={game.game_cover_url}
+                                alt={game.game_title}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 left-2 flex gap-1">
+                                {game.userIsFavorite && (
+                                  <div className="bg-red-500 rounded-full p-1">
+                                    <Heart className="w-3 h-3 text-white fill-white" />
+                                  </div>
+                                )}
+                                {game.userIsCompleted && (
+                                  <div className="bg-green-500 rounded-full p-1">
+                                    <CheckCircle className="w-3 h-3 text-white" />
+                                  </div>
+                                )}
                               </div>
                             </div>
+                            <CardContent className="p-4">
+                              <h3 className="font-semibold text-sm mb-3 line-clamp-2">
+                                {game.game_title}
+                              </h3>
+                              <div className="space-y-2">
+                                {/* Your rating */}
+                                <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-5 w-5">
+                                        <AvatarImage
+                                          src={
+                                            user?.user_metadata?.avatar_url ||
+                                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
+                                          }
+                                          alt="You"
+                                        />
+                                        <AvatarFallback className="text-[8px]">
+                                          {(user?.user_metadata?.full_name ||
+                                            user?.email ||
+                                            "Y")[0].toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-blue-700 font-medium">
+                                        You
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      {game.userRating && (
+                                        <span className="text-blue-700 font-medium">
+                                          {game.userRating}/10
+                                        </span>
+                                      )}
+                                      {getStatusBadge(game.userStatus)}
+                                    </div>
+                                  </div>
+                                </div>
 
-                            <p className="text-xs text-gray-600 font-medium">
-                              Shared with {game.friends.length} friend
-                              {game.friends.length > 1 ? "s" : ""}:
-                            </p>
-                            {game.friends.map((friend, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center justify-between text-xs"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage
-                                      src={
-                                        friend.avatar_url ||
-                                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.name}`
-                                      }
-                                      alt={friend.name}
-                                    />
-                                    <AvatarFallback className="text-[8px]">
-                                      {friend.name[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-gray-700">
-                                    {friend.name}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  {friend.rating && (
-                                    <span className="text-gray-600">
-                                      {friend.rating}/10
-                                    </span>
-                                  )}
-                                  {getStatusBadge(friend.status)}
-                                </div>
+                                <p className="text-xs text-gray-600 font-medium">
+                                  Shared with {game.friends.length} friend
+                                  {game.friends.length > 1 ? "s" : ""}:
+                                </p>
+                                {game.friends.map((friend, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center justify-between text-xs"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-5 w-5">
+                                        <AvatarImage
+                                          src={
+                                            friend.avatar_url ||
+                                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.name}`
+                                          }
+                                          alt={friend.name}
+                                        />
+                                        <AvatarFallback className="text-[8px]">
+                                          {friend.name[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-gray-700">
+                                        {friend.name}
+                                      </span>
+                                      <div className="flex gap-1">
+                                        {friend.isFavorite && (
+                                          <Heart className="w-3 h-3 text-red-500 fill-red-500" />
+                                        )}
+                                        {friend.isCompleted && (
+                                          <CheckCircle className="w-3 h-3 text-green-500" />
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      {friend.rating && (
+                                        <span className="text-gray-600">
+                                          {friend.rating}/10
+                                        </span>
+                                      )}
+                                      {getStatusBadge(friend.status)}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-16">
-                    <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      No shared games
-                    </h3>
-                    <p className="text-gray-600">
-                      You don't have any games in common with your friends yet.
-                    </p>
-                  </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-16">
+                        <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                          No shared games
+                        </h3>
+                        <p className="text-gray-600">
+                          You don't have any games in common with your friends
+                          yet.
+                        </p>
+                      </div>
+                    );
+                  })()
                 )}
               </TabsContent>
             </Tabs>
