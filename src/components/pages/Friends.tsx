@@ -33,6 +33,7 @@ import {
   Loader2,
   Filter,
 } from "lucide-react";
+import SearchSortFilter from "@/components/ui/search-sort-filter";
 import Sidebar from "@/components/dashboard/layout/Sidebar";
 import TopNavigation from "@/components/dashboard/layout/TopNavigation";
 import { supabase } from "../../../supabase/supabase";
@@ -104,6 +105,9 @@ const Friends = () => {
   const [sharedGamesSortBy, setSharedGamesSortBy] =
     useState<string>("alphabetical");
   const [sharedGamesSearchTerm, setSharedGamesSearchTerm] = useState("");
+  const [friendGamesSearchTerm, setFriendGamesSearchTerm] = useState("");
+  const [friendGamesSortBy, setFriendGamesSortBy] =
+    useState<string>("dateAdded");
 
   // Search for users to add as friends
   const searchUsers = useCallback(
@@ -492,6 +496,8 @@ const Friends = () => {
                   onClick={() => {
                     setIsViewingFriend(false);
                     setSelectedFriend(null);
+                    setFriendGamesSearchTerm("");
+                    setFriendGamesSortBy("dateAdded");
                   }}
                 >
                   ← Back to Friends
@@ -521,77 +527,148 @@ const Friends = () => {
                 </div>
               </div>
 
+              <div className="mb-6">
+                <SearchSortFilter
+                  searchValue={friendGamesSearchTerm}
+                  onSearchChange={setFriendGamesSearchTerm}
+                  searchPlaceholder="Search games..."
+                  sortValue={friendGamesSortBy}
+                  onSortChange={setFriendGamesSortBy}
+                  sortOptions={[
+                    { value: "dateAdded", label: "Date Added" },
+                    { value: "alphabetical", label: "Alphabetical" },
+                    { value: "rating", label: "Rating" },
+                    {
+                      value: "favoritesRating",
+                      label: "Favorites then Rating",
+                    },
+                    { value: "completed", label: "Completed" },
+                  ]}
+                  showFilter={true}
+                  onFilterClick={() => {}}
+                />
+              </div>
+
               {isLoadingFriendGames ? (
                 <div className="flex justify-center items-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin" />
                   <span className="ml-2 text-gray-600">Loading games...</span>
                 </div>
-              ) : friendGames.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {friendGames.map((game) => (
-                    <Card
-                      key={game.id}
-                      className="overflow-hidden hover:shadow-lg transition-shadow"
-                    >
-                      <div className="aspect-[3/4] relative">
-                        <img
-                          src={game.cover}
-                          alt={game.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-2 right-2">
-                          {getStatusBadge(game.status)}
-                        </div>
-                        <div className="absolute top-2 left-2 flex gap-1">
-                          {game.isFavorite && (
-                            <div className="bg-red-500 rounded-full p-1">
-                              <Heart className="w-3 h-3 text-white fill-white" />
-                            </div>
-                          )}
-                          {game.isCompleted && (
-                            <div className="bg-green-500 rounded-full p-1">
-                              <CheckCircle className="w-3 h-3 text-white" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-sm mb-2 line-clamp-2">
-                          {game.title}
-                        </h3>
-                        {game.personalRating && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="flex">
-                              {renderStars(game.personalRating)}
-                            </div>
-                            <span className="text-sm text-gray-600">
-                              {game.personalRating}/10
-                            </span>
-                          </div>
-                        )}
-                        {game.notes && (
-                          <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                            {game.notes}
-                          </p>
-                        )}
-                        <p className="text-xs text-gray-500">
-                          Added {new Date(game.dateAdded).toLocaleDateString()}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
               ) : (
-                <div className="text-center py-16">
-                  <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    No games yet
-                  </h3>
-                  <p className="text-gray-600">
-                    {selectedFriend.full_name} hasn't added any games to their
-                    library yet.
-                  </p>
-                </div>
+                (() => {
+                  // Filter and sort friend games
+                  const filteredFriendGames = friendGames.filter((game) =>
+                    game.title
+                      .toLowerCase()
+                      .includes(friendGamesSearchTerm.toLowerCase()),
+                  );
+
+                  const sortedFriendGames = [...filteredFriendGames].sort(
+                    (a, b) => {
+                      switch (friendGamesSortBy) {
+                        case "alphabetical":
+                          return a.title.localeCompare(b.title);
+                        case "rating":
+                          const ratingA = a.personalRating || 0;
+                          const ratingB = b.personalRating || 0;
+                          return ratingB - ratingA; // Highest rating first
+                        case "favoritesRating":
+                          // First sort by favorites (favorites first), then by rating
+                          if (a.isFavorite && !b.isFavorite) return -1;
+                          if (!a.isFavorite && b.isFavorite) return 1;
+                          if (a.isFavorite && b.isFavorite) {
+                            const ratingA = a.personalRating || 0;
+                            const ratingB = b.personalRating || 0;
+                            return ratingB - ratingA;
+                          }
+                          return 0;
+                        case "completed":
+                          // Completed games first
+                          if (a.isCompleted && !b.isCompleted) return -1;
+                          if (!a.isCompleted && b.isCompleted) return 1;
+                          return 0;
+                        case "dateAdded":
+                        default:
+                          return (
+                            new Date(b.dateAdded).getTime() -
+                            new Date(a.dateAdded).getTime()
+                          ); // Most recent first
+                      }
+                    },
+                  );
+
+                  return sortedFriendGames.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {sortedFriendGames.map((game) => (
+                        <Card
+                          key={game.id}
+                          className="overflow-hidden hover:shadow-lg transition-shadow"
+                        >
+                          <div className="aspect-[3/4] relative">
+                            <img
+                              src={game.cover}
+                              alt={game.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute top-2 right-2">
+                              {getStatusBadge(game.status)}
+                            </div>
+                            <div className="absolute top-2 left-2 flex gap-1">
+                              {game.isFavorite && (
+                                <div className="bg-red-500 rounded-full p-1">
+                                  <Heart className="w-3 h-3 text-white fill-white" />
+                                </div>
+                              )}
+                              {game.isCompleted && (
+                                <div className="bg-green-500 rounded-full p-1">
+                                  <CheckCircle className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <CardContent className="p-4">
+                            <h3 className="font-semibold text-sm mb-2 line-clamp-2">
+                              {game.title}
+                            </h3>
+                            {game.personalRating && (
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="flex">
+                                  {renderStars(game.personalRating)}
+                                </div>
+                                <span className="text-sm text-gray-600">
+                                  {game.personalRating}/10
+                                </span>
+                              </div>
+                            )}
+                            {game.notes && (
+                              <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+                                {game.notes}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-500">
+                              Added{" "}
+                              {new Date(game.dateAdded).toLocaleDateString()}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16">
+                      <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        {friendGamesSearchTerm
+                          ? "No games found"
+                          : "No games yet"}
+                      </h3>
+                      <p className="text-gray-600">
+                        {friendGamesSearchTerm
+                          ? `No games match "${friendGamesSearchTerm}"`
+                          : `${selectedFriend.full_name} hasn't added any games to their library yet.`}
+                      </p>
+                    </div>
+                  );
+                })()
               )}
             </div>
           </div>
@@ -688,29 +765,42 @@ const Friends = () => {
               </Dialog>
             </div>
 
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder={
-                    activeTab === "shared"
-                      ? "Search games..."
-                      : "Search friends..."
-                  }
-                  value={
-                    activeTab === "shared" ? sharedGamesSearchTerm : searchTerm
-                  }
-                  onChange={(e) => {
-                    if (activeTab === "shared") {
-                      setSharedGamesSearchTerm(e.target.value);
-                    } else {
-                      setSearchTerm(e.target.value);
-                    }
-                  }}
-                  className="pl-10"
+            {activeTab === "shared" && (
+              <div className="mb-6">
+                <SearchSortFilter
+                  searchValue={sharedGamesSearchTerm}
+                  onSearchChange={setSharedGamesSearchTerm}
+                  searchPlaceholder="Search games..."
+                  sortValue={sharedGamesSortBy}
+                  onSortChange={setSharedGamesSortBy}
+                  sortOptions={[
+                    { value: "alphabetical", label: "Alphabetical" },
+                    { value: "rating", label: "Rating" },
+                    {
+                      value: "favoritesRating",
+                      label: "Favorites then Rating",
+                    },
+                    { value: "completed", label: "Completed" },
+                  ]}
+                  showFilter={true}
+                  onFilterClick={() => {}}
                 />
               </div>
-            </div>
+            )}
+
+            {activeTab !== "shared" && (
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search friends..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            )}
 
             <Tabs
               value={activeTab}
@@ -922,32 +1012,6 @@ const Friends = () => {
               </TabsContent>
 
               <TabsContent value="shared" className="mt-6">
-                {activeTab === "shared" && (
-                  <div className="flex gap-4 mb-6">
-                    <Select
-                      value={sharedGamesSortBy}
-                      onValueChange={setSharedGamesSortBy}
-                    >
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Sort by" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="alphabetical">
-                          Alphabetical
-                        </SelectItem>
-                        <SelectItem value="rating">Rating</SelectItem>
-                        <SelectItem value="favoritesRating">
-                          Favorites then Rating
-                        </SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter
-                    </Button>
-                  </div>
-                )}
                 {isLoadingSharedGames ? (
                   <div className="flex justify-center items-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin" />
