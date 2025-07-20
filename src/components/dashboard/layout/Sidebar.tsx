@@ -61,6 +61,9 @@ const Sidebar = ({
       case "Game Library":
         navigate("/game-library");
         break;
+      case "Discover":
+        navigate("/discover");
+        break;
       case "Friends":
         navigate("/friends");
         break;
