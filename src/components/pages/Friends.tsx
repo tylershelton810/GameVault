@@ -32,6 +32,8 @@ import {
   Eye,
   Loader2,
   Filter,
+  MessageSquare,
+  FileText,
 } from "lucide-react";
 import SearchSortFilter from "@/components/ui/search-sort-filter";
 import Sidebar from "@/components/dashboard/layout/Sidebar";
@@ -39,6 +41,7 @@ import TopNavigation from "@/components/dashboard/layout/TopNavigation";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
 import { Tables } from "@/types/supabase";
+import { useNavigate } from "react-router-dom";
 
 type User = Tables<"users">;
 type GameCollection = Tables<"game_collections">;
@@ -87,6 +90,7 @@ interface SharedGame {
 
 const Friends = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("friends");
   const [searchTerm, setSearchTerm] = useState("");
   const [friendSearchTerm, setFriendSearchTerm] = useState("");
@@ -602,7 +606,23 @@ const Friends = () => {
                       {sortedFriendGames.map((game) => (
                         <Card
                           key={game.id}
-                          className="overflow-hidden hover:shadow-lg transition-shadow"
+                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={async () => {
+                            // Check if current user has this game in their library
+                            const { data: userGameCollection } = await supabase
+                              .from("game_collections")
+                              .select("id")
+                              .eq("user_id", user?.id)
+                              .eq("game_title", game.title)
+                              .single();
+
+                            if (userGameCollection) {
+                              navigate(`/game/${userGameCollection.id}`);
+                            } else {
+                              // Navigate to the friend's game page
+                              navigate(`/game/${game.id}`);
+                            }
+                          }}
                         >
                           <div className="aspect-[3/4] relative">
                             <img
@@ -610,9 +630,6 @@ const Friends = () => {
                               alt={game.title}
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute top-2 right-2">
-                              {getStatusBadge(game.status)}
-                            </div>
                             <div className="absolute top-2 left-2 flex gap-1">
                               {game.isFavorite && (
                                 <div className="bg-red-500 rounded-full p-1">
@@ -624,31 +641,58 @@ const Friends = () => {
                                   <CheckCircle className="w-3 h-3 text-white" />
                                 </div>
                               )}
+                              {game.personalRating && (
+                                <div className="bg-purple-500 rounded-full p-1">
+                                  <MessageSquare className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                              {game.notes && game.notes.trim() && (
+                                <div className="bg-orange-500 rounded-full p-1">
+                                  <FileText className="w-3 h-3 text-white" />
+                                </div>
+                              )}
                             </div>
                           </div>
                           <CardContent className="p-4">
-                            <h3 className="font-semibold text-sm mb-2 line-clamp-2">
+                            <h3 className="font-semibold text-sm mb-3 line-clamp-2">
                               {game.title}
                             </h3>
-                            {game.personalRating && (
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="flex">
-                                  {renderStars(game.personalRating)}
+                            <div className="space-y-2">
+                              {/* Friend's rating */}
+                              <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                                <div className="flex items-center justify-between text-xs">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-5 w-5">
+                                      <AvatarImage
+                                        src={
+                                          selectedFriend.avatar_url ||
+                                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedFriend.email}`
+                                        }
+                                        alt={selectedFriend.full_name}
+                                      />
+                                      <AvatarFallback className="text-[8px]">
+                                        {selectedFriend.full_name[0]}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-blue-700 font-medium">
+                                      {selectedFriend.full_name}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {game.personalRating && (
+                                      <span className="text-blue-700 font-medium">
+                                        {game.personalRating}/10
+                                      </span>
+                                    )}
+                                    {getStatusBadge(game.status)}
+                                  </div>
                                 </div>
-                                <span className="text-sm text-gray-600">
-                                  {game.personalRating}/10
-                                </span>
                               </div>
-                            )}
-                            {game.notes && (
-                              <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                                {game.notes}
+                              <p className="text-xs text-gray-500">
+                                Added{" "}
+                                {new Date(game.dateAdded).toLocaleDateString()}
                               </p>
-                            )}
-                            <p className="text-xs text-gray-500">
-                              Added{" "}
-                              {new Date(game.dateAdded).toLocaleDateString()}
-                            </p>
+                            </div>
                           </CardContent>
                         </Card>
                       ))}
@@ -1066,7 +1110,43 @@ const Friends = () => {
                         {sortedSharedGames.map((game) => (
                           <Card
                             key={game.igdb_game_id}
-                            className="overflow-hidden hover:shadow-lg transition-shadow"
+                            className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                            onClick={async () => {
+                              // Check if user has this game in their library
+                              const { data: userGameCollection } =
+                                await supabase
+                                  .from("game_collections")
+                                  .select("id")
+                                  .eq("user_id", user?.id)
+                                  .eq("igdb_game_id", game.igdb_game_id)
+                                  .single();
+
+                              if (userGameCollection) {
+                                navigate(`/game/${userGameCollection.id}`);
+                              } else {
+                                // User doesn't have this game, find a friend's game collection ID
+                                const acceptedFriends = friends.filter(
+                                  (f) => f.status === "accepted",
+                                );
+
+                                for (const friend of acceptedFriends) {
+                                  const { data: friendGameCollection } =
+                                    await supabase
+                                      .from("game_collections")
+                                      .select("id")
+                                      .eq("user_id", friend.id)
+                                      .eq("igdb_game_id", game.igdb_game_id)
+                                      .single();
+
+                                  if (friendGameCollection) {
+                                    navigate(
+                                      `/game/${friendGameCollection.id}`,
+                                    );
+                                    break;
+                                  }
+                                }
+                              }
+                            }}
                           >
                             <div className="aspect-[3/4] relative">
                               <img

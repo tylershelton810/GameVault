@@ -34,12 +34,15 @@ import {
   CheckCircle,
   Edit,
   Users,
+  FileText,
+  MessageSquare,
 } from "lucide-react";
 import Sidebar from "@/components/dashboard/layout/Sidebar";
 import TopNavigation from "@/components/dashboard/layout/TopNavigation";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
 import { Tables } from "@/types/supabase";
+import { useNavigate } from "react-router-dom";
 
 type GameCollection = Tables<"game_collections">;
 
@@ -56,12 +59,15 @@ interface Game {
   isCompleted?: boolean;
   isFavorite?: boolean;
   reviewText?: string;
+  hasReview?: boolean;
   friendsWithGame?: {
     id: string;
     name: string;
     avatar_url?: string;
     status: string;
     rating?: number;
+    hasReview?: boolean;
+    hasNotes?: boolean;
   }[];
 }
 
@@ -77,6 +83,7 @@ interface IGDBGame {
 
 const GameLibrary = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddGameOpen, setIsAddGameOpen] = useState(false);
@@ -103,6 +110,12 @@ const GameLibrary = () => {
   const [friendsGames, setFriendsGames] = useState<Map<number, any[]>>(
     new Map(),
   );
+  const [gameReviews, setGameReviews] = useState<Map<string, boolean>>(
+    new Map(),
+  );
+  const [friendsReviews, setFriendsReviews] = useState<
+    Map<string, Map<string, boolean>>
+  >(new Map());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // IGDB API search function
@@ -195,30 +208,59 @@ const GameLibrary = () => {
 
     try {
       const friendsGamesMap = new Map<number, any[]>();
+      const friendsReviewsMap = new Map<string, Map<string, boolean>>();
 
       for (const friend of friends) {
         const { data: friendGames } = await supabase
           .from("game_collections")
-          .select("igdb_game_id, status, personal_rating")
+          .select("id, igdb_game_id, status, personal_rating, personal_notes")
           .eq("user_id", friend.id);
 
         if (friendGames) {
+          // Fetch reviews for friend's games
+          const gameCollectionIds = friendGames.map((g) => g.id);
+          const { data: friendReviews } = await supabase
+            .from("game_reviews")
+            .select("game_collection_id")
+            .in("game_collection_id", gameCollectionIds);
+
+          const reviewsSet = new Set(
+            friendReviews?.map((r) => r.game_collection_id) || [],
+          );
+
           for (const game of friendGames) {
             if (!friendsGamesMap.has(game.igdb_game_id)) {
               friendsGamesMap.set(game.igdb_game_id, []);
             }
+
+            const hasReview = reviewsSet.has(game.id);
+            const hasNotes = !!(
+              game.personal_notes && game.personal_notes.trim()
+            );
+
             friendsGamesMap.get(game.igdb_game_id)!.push({
               id: friend.id,
               name: friend.full_name,
               avatar_url: friend.avatar_url,
               status: game.status,
               rating: game.personal_rating,
+              hasReview,
+              hasNotes,
             });
+
+            // Store friend's review status
+            if (!friendsReviewsMap.has(game.igdb_game_id.toString())) {
+              friendsReviewsMap.set(game.igdb_game_id.toString(), new Map());
+            }
+            friendsReviewsMap
+              .get(game.igdb_game_id.toString())!
+              .set(friend.id, hasReview);
           }
         }
       }
 
       setFriendsGames(friendsGamesMap);
+      setFriendsReviews(friendsReviewsMap);
     } catch (error) {
       console.error("Error fetching friends games:", error);
     }
@@ -245,9 +287,21 @@ const GameLibrary = () => {
           return;
         }
 
+        // Fetch user's reviews
+        const gameIds = data.map((g) => g.id);
+        const { data: userReviews } = await supabase
+          .from("game_reviews")
+          .select("game_collection_id")
+          .in("game_collection_id", gameIds);
+
+        const userReviewsSet = new Set(
+          userReviews?.map((r) => r.game_collection_id) || [],
+        );
+
         // Transform database data to match our Game interface
         const transformedGames: Game[] = data.map((game) => {
           const friendsWithThisGame = friendsGames.get(game.igdb_game_id) || [];
+          const hasReview = userReviewsSet.has(game.id);
 
           return {
             id: game.id,
@@ -262,6 +316,7 @@ const GameLibrary = () => {
             igdbId: game.igdb_game_id,
             isCompleted: game.is_completed || false,
             isFavorite: game.is_favorite || false,
+            hasReview,
             friendsWithGame: friendsWithThisGame,
           };
         });
@@ -323,31 +378,65 @@ const GameLibrary = () => {
 
         // Fetch friends' games
         const friendsGamesMap = new Map<number, any[]>();
+        const friendsReviewsMap = new Map<string, Map<string, boolean>>();
         if (friendsData.length > 0) {
           for (const friend of friendsData) {
             const { data: friendGames } = await supabase
               .from("game_collections")
-              .select("igdb_game_id, status, personal_rating")
+              .select(
+                "id, igdb_game_id, status, personal_rating, personal_notes",
+              )
               .eq("user_id", friend.id);
 
             if (friendGames) {
+              // Fetch reviews for friend's games
+              const gameCollectionIds = friendGames.map((g) => g.id);
+              const { data: friendReviews } = await supabase
+                .from("game_reviews")
+                .select("game_collection_id")
+                .in("game_collection_id", gameCollectionIds);
+
+              const reviewsSet = new Set(
+                friendReviews?.map((r) => r.game_collection_id) || [],
+              );
+
               for (const game of friendGames) {
                 if (!friendsGamesMap.has(game.igdb_game_id)) {
                   friendsGamesMap.set(game.igdb_game_id, []);
                 }
+
+                const hasReview = reviewsSet.has(game.id);
+                const hasNotes = !!(
+                  game.personal_notes && game.personal_notes.trim()
+                );
+
                 friendsGamesMap.get(game.igdb_game_id)!.push({
                   id: friend.id,
                   name: friend.full_name,
                   avatar_url: friend.avatar_url,
                   status: game.status,
                   rating: game.personal_rating,
+                  hasReview,
+                  hasNotes,
                 });
+
+                // Store friend's review status
+                if (!friendsReviewsMap.has(game.igdb_game_id.toString())) {
+                  friendsReviewsMap.set(
+                    game.igdb_game_id.toString(),
+                    new Map(),
+                  );
+                }
+                friendsReviewsMap
+                  .get(game.igdb_game_id.toString())!
+                  .set(friend.id, hasReview);
               }
             }
           }
         }
 
         setFriendsGames(friendsGamesMap);
+        setFriendsReviews(friendsReviewsMap);
 
         // Fetch user's games
         const { data: gamesData, error: gamesError } = await supabase
@@ -357,9 +446,21 @@ const GameLibrary = () => {
           .order("date_added", { ascending: false });
 
         if (!gamesError && gamesData) {
+          // Fetch user's reviews
+          const gameIds = gamesData.map((g) => g.id);
+          const { data: userReviews } = await supabase
+            .from("game_reviews")
+            .select("game_collection_id")
+            .in("game_collection_id", gameIds);
+
+          const userReviewsSet = new Set(
+            userReviews?.map((r) => r.game_collection_id) || [],
+          );
+
           const transformedGames: Game[] = gamesData.map((game) => {
             const friendsWithThisGame =
               friendsGamesMap.get(game.igdb_game_id) || [];
+            const hasReview = userReviewsSet.has(game.id);
 
             return {
               id: game.id,
@@ -374,6 +475,7 @@ const GameLibrary = () => {
               igdbId: game.igdb_game_id,
               isCompleted: game.is_completed || false,
               isFavorite: game.is_favorite || false,
+              hasReview,
               friendsWithGame: friendsWithThisGame,
             };
           });
@@ -1179,7 +1281,8 @@ const GameLibrary = () => {
                     {sortedGames.map((game) => (
                       <Card
                         key={game.id}
-                        className="overflow-hidden hover:shadow-lg transition-shadow"
+                        className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => navigate(`/game/${game.id}`)}
                       >
                         <div className="aspect-[3/4] relative">
                           <img
@@ -1187,9 +1290,6 @@ const GameLibrary = () => {
                             alt={game.title}
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute top-2 right-2">
-                            {getStatusBadge(game.status)}
-                          </div>
                           <div className="absolute top-2 left-2 flex gap-1">
                             {game.isFavorite && (
                               <div className="bg-red-500 rounded-full p-1">
@@ -1201,65 +1301,86 @@ const GameLibrary = () => {
                                 <CheckCircle className="w-3 h-3 text-white" />
                               </div>
                             )}
+                            {game.hasReview && (
+                              <div className="bg-purple-500 rounded-full p-1">
+                                <MessageSquare className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                            {game.notes && game.notes.trim() && (
+                              <div className="bg-orange-500 rounded-full p-1">
+                                <FileText className="w-3 h-3 text-white" />
+                              </div>
+                            )}
                           </div>
                           <div className="absolute bottom-2 right-2">
                             <Button
                               size="sm"
                               variant="ghost"
                               className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70"
-                              onClick={() => handleEditGame(game)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditGame(game);
+                              }}
                             >
                               <Edit className="w-3 h-3 text-white" />
                             </Button>
                           </div>
                         </div>
                         <CardContent className="p-4">
-                          <h3 className="font-semibold text-sm mb-2 line-clamp-2">
+                          <h3 className="font-semibold text-sm mb-3 line-clamp-2">
                             {game.title}
                           </h3>
-                          {game.personalRating && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="flex">
-                                {renderStars(game.personalRating)}
-                              </div>
-                              <span className="text-sm text-gray-600">
-                                {game.personalRating}/10
-                              </span>
-                            </div>
-                          )}
-                          {game.notes && (
-                            <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                              {game.notes}
-                            </p>
-                          )}
-
-                          {/* Friends with this game */}
-                          {game.friendsWithGame &&
-                            game.friendsWithGame.length > 0 && (
-                              <div className="mb-2">
-                                <div className="flex items-center gap-1 mb-1">
-                                  <Users className="w-3 h-3 text-gray-500" />
-                                  <span className="text-xs text-gray-500">
-                                    {game.friendsWithGame.length} friend
-                                    {game.friendsWithGame.length > 1
-                                      ? "s"
-                                      : ""}{" "}
-                                    {game.status === "want-to-play"
-                                      ? "also want this"
-                                      : game.status === "playing"
-                                        ? "also playing"
-                                        : "also played this"}
+                          <div className="space-y-2">
+                            {/* Your rating */}
+                            <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-5 w-5">
+                                    <AvatarImage
+                                      src={
+                                        user?.user_metadata?.avatar_url ||
+                                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
+                                      }
+                                      alt="You"
+                                    />
+                                    <AvatarFallback className="text-[8px]">
+                                      {(user?.user_metadata?.full_name ||
+                                        user?.email ||
+                                        "Y")[0].toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-blue-700 font-medium">
+                                    You
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1 flex-wrap">
-                                  {game.friendsWithGame
-                                    .slice(0, 3)
-                                    .map((friend, index) => (
-                                      <div
-                                        key={friend.id}
-                                        className="flex items-center gap-1"
-                                      >
-                                        <Avatar className="h-4 w-4">
+                                <div className="flex items-center gap-1">
+                                  {game.personalRating && (
+                                    <span className="text-blue-700 font-medium">
+                                      {game.personalRating}/10
+                                    </span>
+                                  )}
+                                  {getStatusBadge(game.status)}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Friends with this game */}
+                            {game.friendsWithGame &&
+                              game.friendsWithGame.length > 0 && (
+                                <>
+                                  <p className="text-xs text-gray-600 font-medium">
+                                    Shared with {game.friendsWithGame.length}{" "}
+                                    friend
+                                    {game.friendsWithGame.length > 1 ? "s" : ""}
+                                    :
+                                  </p>
+                                  {game.friendsWithGame.map((friend, index) => (
+                                    <div
+                                      key={friend.id}
+                                      className="flex items-center justify-between text-xs"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <Avatar className="h-5 w-5">
                                           <AvatarImage
                                             src={
                                               friend.avatar_url ||
@@ -1271,29 +1392,33 @@ const GameLibrary = () => {
                                             {friend.name[0]}
                                           </AvatarFallback>
                                         </Avatar>
-                                        <span className="text-xs text-gray-600">
-                                          {friend.name.split(" ")[0]}
+                                        <span className="text-gray-700">
+                                          {friend.name}
                                         </span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        {friend.hasReview && (
+                                          <div className="bg-purple-100 rounded-full p-0.5">
+                                            <MessageSquare className="w-2.5 h-2.5 text-purple-600" />
+                                          </div>
+                                        )}
+                                        {friend.hasNotes && (
+                                          <div className="bg-orange-100 rounded-full p-0.5">
+                                            <FileText className="w-2.5 h-2.5 text-orange-600" />
+                                          </div>
+                                        )}
                                         {friend.rating && (
-                                          <span className="text-xs text-gray-500">
-                                            ({friend.rating}/10)
+                                          <span className="text-gray-600">
+                                            {friend.rating}/10
                                           </span>
                                         )}
+                                        {getStatusBadge(friend.status)}
                                       </div>
-                                    ))}
-                                  {game.friendsWithGame.length > 3 && (
-                                    <span className="text-xs text-gray-500">
-                                      +{game.friendsWithGame.length - 3} more
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                          <p className="text-xs text-gray-500">
-                            Added{" "}
-                            {new Date(game.dateAdded).toLocaleDateString()}
-                          </p>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                          </div>
                         </CardContent>
                       </Card>
                     ))}

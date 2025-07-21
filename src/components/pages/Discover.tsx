@@ -15,6 +15,7 @@ import Sidebar from "@/components/dashboard/layout/Sidebar";
 import TopNavigation from "@/components/dashboard/layout/TopNavigation";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
+import { useNavigate } from "react-router-dom";
 
 interface TrendingGame {
   game_title: string;
@@ -38,6 +39,7 @@ interface TrendingGame {
 
 const Discover = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState("Discover");
   const [trendingGames, setTrendingGames] = useState<TrendingGame[]>([]);
   const [isLoadingTrending, setIsLoadingTrending] = useState(true);
@@ -321,7 +323,39 @@ const Discover = () => {
                     {trendingGames.map((game) => (
                       <Card
                         key={game.igdb_game_id}
-                        className="flex-shrink-0 w-48 overflow-hidden hover:shadow-lg transition-shadow"
+                        className="flex-shrink-0 w-48 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={async () => {
+                          // Check if user has this game in their library
+                          if (game.userStatus !== "not-in-library") {
+                            // Find the user's game collection ID for this IGDB game
+                            const { data: userGameCollection } = await supabase
+                              .from("game_collections")
+                              .select("id")
+                              .eq("user_id", user?.id)
+                              .eq("igdb_game_id", game.igdb_game_id)
+                              .single();
+
+                            if (userGameCollection) {
+                              navigate(`/game/${userGameCollection.id}`);
+                            }
+                          } else {
+                            // User doesn't have this game, find a friend's game collection ID
+                            const friendWithGame = game.friends[0];
+                            if (friendWithGame) {
+                              const { data: friendGameCollection } =
+                                await supabase
+                                  .from("game_collections")
+                                  .select("id")
+                                  .eq("user_id", friendWithGame.id)
+                                  .eq("igdb_game_id", game.igdb_game_id)
+                                  .single();
+
+                              if (friendGameCollection) {
+                                navigate(`/game/${friendGameCollection.id}`);
+                              }
+                            }
+                          }
+                        }}
                       >
                         <div className="aspect-[3/4] relative">
                           <img

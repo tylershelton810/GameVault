@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CalendarDays, BarChart2, Users, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface GameCardProps {
@@ -61,6 +62,7 @@ const GameCard = ({
   image,
   hoursPlayed,
 }: GameCardProps) => {
+  const navigate = useNavigate();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "playing":
@@ -87,7 +89,14 @@ const GameCard = ({
     }
   };
   return (
-    <Card className="bg-white/90 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+    <Card
+      className="bg-white/90 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+      onClick={() => {
+        // For demo purposes, we'll use a placeholder ID since these are default games
+        // In a real implementation, you'd pass the actual game collection ID
+        console.log("Navigate to game page for:", title);
+      }}
+    >
       <div className="aspect-video relative overflow-hidden">
         <img src={image} alt={title} className="w-full h-full object-cover" />
         <div className="absolute top-2 right-2">

@@ -10,6 +10,7 @@ import GameLibrary from "./components/pages/GameLibrary";
 import Friends from "./components/pages/Friends";
 import SocialTimeline from "./components/pages/SocialTimeline";
 import Discover from "./components/pages/Discover";
+import GamePage from "./components/pages/GamePage";
 import { AuthProvider, useAuth } from "../supabase/auth";
 import { Toaster } from "./components/ui/toaster";
 import { LoadingScreen, LoadingSpinner } from "./components/ui/loading-spinner";
@@ -73,6 +74,14 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Discover />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/game/:gameId"
+          element={
+            <PrivateRoute>
+              <GamePage />
             </PrivateRoute>
           }
         />
