@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Star } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
 
@@ -33,8 +34,7 @@ const GameClubReview: React.FC<GameClubReviewProps> = ({
   onReviewSubmitted,
 }) => {
   const { user } = useAuth();
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
+  const [rating, setRating] = useState<number[]>([5]);
   const [review, setReview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingReview, setExistingReview] = useState<any>(null);
@@ -50,15 +50,15 @@ const GameClubReview: React.FC<GameClubReviewProps> = ({
 
     try {
       const { data, error } = await supabase
-        .from("user_game_reviews")
+        .from("game_club_reviews")
         .select("*")
         .eq("user_id", user.id)
-        .eq("igdb_game_id", club.igdb_game_id)
+        .eq("club_id", club.id)
         .single();
 
       if (data && !error) {
         setExistingReview(data);
-        setRating(data.rating);
+        setRating([data.rating]);
         setReview(data.review_text || "");
       }
     } catch (error) {
@@ -68,69 +68,126 @@ const GameClubReview: React.FC<GameClubReviewProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!user || rating === 0) return;
+    if (!user || rating[0] === 0) return;
 
     setIsSubmitting(true);
     try {
-      // First, check if user has this game in their library
-      const { data: libraryEntry } = await supabase
-        .from("user_games")
+      // First, check if user has this game in their collection
+      const { data: collectionEntry } = await supabase
+        .from("game_collections")
         .select("id")
         .eq("user_id", user.id)
         .eq("igdb_game_id", club.igdb_game_id)
         .single();
 
-      // If not in library, add it as "played"
-      if (!libraryEntry) {
-        await supabase.from("user_games").insert({
-          user_id: user.id,
-          igdb_game_id: club.igdb_game_id,
-          game_title: club.game_title,
-          status: "played",
-          rating: rating,
-        });
-      } else {
-        // Update existing library entry with rating
-        await supabase
-          .from("user_games")
-          .update({
-            rating: rating,
+      let gameCollectionId;
+
+      // If not in collection, add it as "played"
+      if (!collectionEntry) {
+        const { data: newEntry } = await supabase
+          .from("game_collections")
+          .insert({
+            user_id: user.id,
+            igdb_game_id: club.igdb_game_id,
+            game_title: club.game_title,
             status: "played",
+            personal_rating: rating[0],
+            is_completed: true,
+            date_completed: new Date().toISOString(),
           })
-          .eq("id", libraryEntry.id);
+          .select("id")
+          .single();
+
+        gameCollectionId = newEntry?.id;
+      } else {
+        // Update existing collection entry with rating and mark as played
+        await supabase
+          .from("game_collections")
+          .update({
+            personal_rating: rating[0],
+            status: "played",
+            is_completed: true,
+            date_completed: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", collectionEntry.id);
+
+        gameCollectionId = collectionEntry.id;
       }
 
-      // Add or update review
+      let clubReviewId;
+
+      // Add or update game club review
       if (existingReview) {
-        await supabase
-          .from("user_game_reviews")
+        const { data: updatedReview } = await supabase
+          .from("game_club_reviews")
           .update({
-            rating: rating,
+            rating: rating[0],
             review_text: review.trim() || null,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", existingReview.id);
+          .eq("id", existingReview.id)
+          .select("id")
+          .single();
+
+        clubReviewId = updatedReview?.id;
       } else {
-        await supabase.from("user_game_reviews").insert({
-          user_id: user.id,
-          igdb_game_id: club.igdb_game_id,
-          game_title: club.game_title,
-          rating: rating,
-          review_text: review.trim() || null,
-        });
+        const { data: newReview } = await supabase
+          .from("game_club_reviews")
+          .insert({
+            user_id: user.id,
+            club_id: club.id,
+            rating: rating[0],
+            review_text: review.trim() || null,
+            is_completed: true,
+          })
+          .select("id")
+          .single();
+
+        clubReviewId = newReview?.id;
       }
 
-      // Create activity for the review
-      await supabase.from("user_activities").insert({
+      // Also add/update regular game review if there's review text
+      if (review.trim()) {
+        const { data: existingGameReview } = await supabase
+          .from("game_reviews")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("game_collection_id", gameCollectionId)
+          .single();
+
+        if (existingGameReview) {
+          await supabase
+            .from("game_reviews")
+            .update({
+              rating: rating[0],
+              review_text: review.trim(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingGameReview.id);
+        } else {
+          await supabase.from("game_reviews").insert({
+            user_id: user.id,
+            game_collection_id: gameCollectionId,
+            rating: rating[0],
+            review_text: review.trim(),
+          });
+        }
+      }
+
+      // Create activity for the review (using valid activity_type)
+      await supabase.from("activity_feed").insert({
         user_id: user.id,
-        activity_type: "game_reviewed",
-        game_id: club.igdb_game_id,
-        game_title: club.game_title,
-        metadata: {
-          rating: rating,
+        activity_type: "review_posted",
+        game_collection_id: gameCollectionId,
+        activity_data: {
+          rating: rating[0],
           review_text: review.trim() || null,
           game_club_id: club.id,
           game_club_name: club.name,
+          game_title: club.game_title,
+          igdb_game_id: club.igdb_game_id,
+          source: "game_club",
         },
       });
 
@@ -144,18 +201,17 @@ const GameClubReview: React.FC<GameClubReviewProps> = ({
   };
 
   const handleReset = () => {
-    setRating(0);
-    setHoverRating(0);
+    setRating([5]);
     setReview("");
     setExistingReview(null);
   };
 
-  const getRatingText = (rating: number) => {
-    if (rating === 0) return "No rating";
-    if (rating <= 2) return "Poor";
-    if (rating <= 4) return "Fair";
-    if (rating <= 6) return "Good";
-    if (rating <= 8) return "Great";
+  const getRatingText = (ratingValue: number) => {
+    if (ratingValue === 0) return "No rating";
+    if (ratingValue <= 2) return "Poor";
+    if (ratingValue <= 4) return "Fair";
+    if (ratingValue <= 6) return "Good";
+    if (ratingValue <= 8) return "Great";
     return "Excellent";
   };
 
@@ -166,6 +222,10 @@ const GameClubReview: React.FC<GameClubReviewProps> = ({
           <DialogTitle>
             {existingReview ? "Update Review" : "Rate & Review"}
           </DialogTitle>
+          <DialogDescription>
+            Share your thoughts and rating for {club.game_title} from the{" "}
+            {club.name} club.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
           <div>
@@ -179,37 +239,17 @@ const GameClubReview: React.FC<GameClubReviewProps> = ({
 
           {/* Rating */}
           <div className="space-y-2">
-            <Label>Rating *</Label>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => {
-                const isFilled = star <= (hoverRating || rating);
-                const isHalf =
-                  star === Math.ceil(hoverRating || rating) &&
-                  (hoverRating || rating) % 1 !== 0;
-
-                return (
-                  <button
-                    key={star}
-                    type="button"
-                    className="p-1 hover:scale-110 transition-transform"
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    onClick={() => setRating(star)}
-                  >
-                    <Star
-                      className={`w-6 h-6 transition-colors ${
-                        isFilled
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300 hover:text-yellow-400"
-                      }`}
-                    />
-                  </button>
-                );
-              })}
-            </div>
+            <Label>Rating: {rating[0]}/10 *</Label>
+            <Slider
+              value={rating}
+              onValueChange={setRating}
+              max={10}
+              min={0.5}
+              step={0.5}
+              className="w-full"
+            />
             <p className="text-sm text-gray-600">
-              {getRatingText(hoverRating || rating)} ({hoverRating || rating}
-              /10)
+              {getRatingText(rating[0])} ({rating[0].toFixed(1)}/10)
             </p>
           </div>
 
@@ -244,7 +284,7 @@ const GameClubReview: React.FC<GameClubReviewProps> = ({
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={rating === 0 || isSubmitting}
+                disabled={rating[0] === 0 || isSubmitting}
               >
                 {isSubmitting
                   ? "Submitting..."

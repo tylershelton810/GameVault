@@ -63,12 +63,27 @@ interface Member {
   };
 }
 
+interface ClubReview {
+  id: string;
+  user_id: string;
+  rating: number;
+  review_text?: string;
+  created_at: string;
+  updated_at: string;
+  user: {
+    full_name: string;
+    avatar_url?: string;
+    email: string;
+  };
+}
+
 const GameClubPage = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [club, setClub] = useState<GameClub | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [clubReviews, setClubReviews] = useState<ClubReview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userMembership, setUserMembership] = useState<Member | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -135,6 +150,28 @@ const GameClubPage = () => {
       if (!userMember) {
         navigate("/game-clubs");
         return;
+      }
+
+      // Fetch club reviews
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from("game_club_reviews")
+        .select(
+          `
+          *,
+          user:users!game_club_reviews_user_id_fkey (
+            full_name,
+            avatar_url,
+            email
+          )
+        `,
+        )
+        .eq("club_id", clubId)
+        .order("created_at", { ascending: false });
+
+      if (reviewsError) {
+        console.error("Error fetching reviews:", reviewsError);
+      } else {
+        setClubReviews(reviewsData || []);
       }
     } catch (error) {
       console.error("Error fetching club data:", error);
@@ -409,6 +446,66 @@ const GameClubPage = () => {
                 {/* Discussion */}
                 <GameClubDiscussion clubId={club.id} />
 
+                {/* Club Reviews */}
+                {clubReviews.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Star className="w-5 h-5 text-yellow-500" />
+                        Club Reviews ({clubReviews.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {clubReviews.map((review) => (
+                          <div
+                            key={review.id}
+                            className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage
+                                  src={
+                                    review.user.avatar_url ||
+                                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${review.user.email}`
+                                  }
+                                  alt={review.user.full_name}
+                                />
+                                <AvatarFallback>
+                                  {review.user.full_name[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="font-medium text-gray-900">
+                                    {review.user.full_name}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                                    <span className="text-sm font-medium">
+                                      {review.rating.toFixed(1)}/10
+                                    </span>
+                                  </div>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(
+                                      review.created_at,
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                {review.review_text && (
+                                  <p className="text-gray-700 text-sm leading-relaxed">
+                                    {review.review_text}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Review Section */}
                 {canShowReview && (
                   <Card>
@@ -535,7 +632,8 @@ const GameClubPage = () => {
           club={club}
           onReviewSubmitted={() => {
             setShowReviewDialog(false);
-            // Optionally refresh data or show success message
+            // Refresh club data to show the new review
+            fetchClubData();
           }}
         />
       )}
