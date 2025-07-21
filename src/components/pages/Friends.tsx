@@ -112,6 +112,8 @@ const Friends = () => {
   const [friendGamesSearchTerm, setFriendGamesSearchTerm] = useState("");
   const [friendGamesSortBy, setFriendGamesSortBy] =
     useState<string>("dateAdded");
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Search for users to add as friends
   const searchUsers = useCallback(
@@ -416,6 +418,17 @@ const Friends = () => {
     }
   }, [user, friends]);
 
+  // Check for mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Load friends on component mount
   useEffect(() => {
     fetchFriends();
@@ -489,11 +502,20 @@ const Friends = () => {
   if (isViewingFriend && selectedFriend) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopNavigation />
+        <TopNavigation
+          onMobileMenuClick={() => setIsSidebarOpen(true)}
+          showMobileMenu={isMobile}
+        />
         <div className="flex h-[calc(100vh-64px)] mt-16">
-          <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
-          <div className="flex-1 overflow-auto">
-            <div className="p-8">
+          <Sidebar
+            activeItem={activeItem}
+            onItemClick={setActiveItem}
+            isMobile={isMobile}
+            isOpen={isSidebarOpen}
+            onOpenChange={setIsSidebarOpen}
+          />
+          <div className="flex-1 overflow-auto w-full md:w-auto">
+            <div className="p-4 md:p-8">
               <div className="flex items-center gap-4 mb-8">
                 <Button
                   variant="outline"
@@ -602,7 +624,7 @@ const Friends = () => {
                   );
 
                   return sortedFriendGames.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                       {sortedFriendGames.map((game) => (
                         <Card
                           key={game.id}
@@ -723,11 +745,20 @@ const Friends = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopNavigation />
+      <TopNavigation
+        onMobileMenuClick={() => setIsSidebarOpen(true)}
+        showMobileMenu={isMobile}
+      />
       <div className="flex h-[calc(100vh-64px)] mt-16">
-        <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
-        <div className="flex-1 overflow-auto">
-          <div className="p-8">
+        <Sidebar
+          activeItem={activeItem}
+          onItemClick={setActiveItem}
+          isMobile={isMobile}
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+        />
+        <div className="flex-1 overflow-auto w-full md:w-auto">
+          <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -876,7 +907,7 @@ const Friends = () => {
                 ) : filteredFriends.filter(
                     (f) => f.status === "accepted" || f.status === "pending",
                   ).length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {filteredFriends
                       .filter(
                         (f) =>
@@ -978,7 +1009,7 @@ const Friends = () => {
 
               <TabsContent value="requests" className="mt-6">
                 {friends.filter((f) => f.status === "requested").length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {friends
                       .filter((f) => f.status === "requested")
                       .map((friend) => (
@@ -1106,7 +1137,7 @@ const Friends = () => {
                     );
 
                     return sortedSharedGames.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                         {sortedSharedGames.map((game) => (
                           <Card
                             key={game.igdb_game_id}

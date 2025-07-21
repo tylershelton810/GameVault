@@ -15,7 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Bell, Home, Search, Settings, User, Camera } from "lucide-react";
+import { Bell, Home, Search, Settings, User, Camera, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../../supabase/auth";
 import { useRef, useState } from "react";
@@ -23,6 +23,8 @@ import { useRef, useState } from "react";
 interface TopNavigationProps {
   onSearch?: (query: string) => void;
   notifications?: Array<{ id: string; title: string }>;
+  onMobileMenuClick?: () => void;
+  showMobileMenu?: boolean;
 }
 
 const TopNavigation = ({
@@ -31,6 +33,8 @@ const TopNavigation = ({
     { id: "1", title: "New project assigned" },
     { id: "2", title: "Meeting reminder" },
   ],
+  onMobileMenuClick = () => {},
+  showMobileMenu = true,
 }: TopNavigationProps) => {
   const { user, signOut, updateProfilePicture } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,15 +80,25 @@ const TopNavigation = ({
   if (!user) return null;
 
   return (
-    <div className="w-full h-16 border-b border-gray-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 fixed top-0 z-50 shadow-sm">
-      <div className="flex items-center gap-4 flex-1">
+    <div className="w-full h-16 border-b border-gray-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 fixed top-0 z-40 shadow-sm">
+      <div className="flex items-center gap-2 md:gap-4 flex-1">
+        {showMobileMenu && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-8 w-8"
+            onClick={onMobileMenuClick}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
         <Link
           to="/"
           className="text-gray-900 hover:text-gray-700 transition-colors"
         >
           <Home className="h-5 w-5" />
         </Link>
-        <div className="relative w-64">
+        <div className="relative w-full max-w-sm md:w-64">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search games..."
@@ -94,7 +108,7 @@ const TopNavigation = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

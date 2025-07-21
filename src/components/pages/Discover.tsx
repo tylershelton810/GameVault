@@ -44,6 +44,8 @@ const Discover = () => {
   const [trendingGames, setTrendingGames] = useState<TrendingGame[]>([]);
   const [isLoadingTrending, setIsLoadingTrending] = useState(true);
   const [friends, setFriends] = useState<any[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Fetch user's friends
   const fetchFriends = useCallback(async () => {
@@ -204,6 +206,17 @@ const Discover = () => {
     }
   }, [user, friends]);
 
+  // Check for mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Load friends on component mount
   useEffect(() => {
     fetchFriends();
@@ -261,11 +274,20 @@ const Discover = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopNavigation />
+      <TopNavigation
+        onMobileMenuClick={() => setIsSidebarOpen(true)}
+        showMobileMenu={isMobile}
+      />
       <div className="flex h-[calc(100vh-64px)] mt-16">
-        <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
-        <div className="flex-1 overflow-auto">
-          <div className="p-8">
+        <Sidebar
+          activeItem={activeItem}
+          onItemClick={setActiveItem}
+          isMobile={isMobile}
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+        />
+        <div className="flex-1 overflow-auto w-full md:w-auto">
+          <div className="p-4 md:p-8">
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-2">
                 <Compass className="w-8 h-8 text-blue-600" />

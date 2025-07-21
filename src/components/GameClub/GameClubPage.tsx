@@ -72,6 +72,8 @@ const GameClubPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userMembership, setUserMembership] = useState<Member | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const fetchClubData = useCallback(async () => {
     if (!clubId || !user) return;
@@ -141,6 +143,16 @@ const GameClubPage = () => {
       setIsLoading(false);
     }
   }, [clubId, user, navigate]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     fetchClubData();
@@ -219,10 +231,18 @@ const GameClubPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#f5f5f7]">
-        <TopNavigation />
+        <TopNavigation
+          onMobileMenuClick={() => setIsSidebarOpen(true)}
+          showMobileMenu={isMobile}
+        />
         <div className="flex h-[calc(100vh-64px)] mt-16">
-          <Sidebar activeItem="Game Clubs" />
-          <main className="flex-1 overflow-auto flex items-center justify-center">
+          <Sidebar
+            activeItem="Game Clubs"
+            isMobile={isMobile}
+            isOpen={isSidebarOpen}
+            onOpenChange={setIsSidebarOpen}
+          />
+          <main className="flex-1 overflow-auto flex items-center justify-center w-full md:w-auto">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
               <p className="text-gray-600">Loading Game Club...</p>
@@ -236,10 +256,18 @@ const GameClubPage = () => {
   if (!club || !userMembership) {
     return (
       <div className="min-h-screen bg-[#f5f5f7]">
-        <TopNavigation />
+        <TopNavigation
+          onMobileMenuClick={() => setIsSidebarOpen(true)}
+          showMobileMenu={isMobile}
+        />
         <div className="flex h-[calc(100vh-64px)] mt-16">
-          <Sidebar activeItem="Game Clubs" />
-          <main className="flex-1 overflow-auto flex items-center justify-center">
+          <Sidebar
+            activeItem="Game Clubs"
+            isMobile={isMobile}
+            isOpen={isSidebarOpen}
+            onOpenChange={setIsSidebarOpen}
+          />
+          <main className="flex-1 overflow-auto flex items-center justify-center w-full md:w-auto">
             <div className="text-center">
               <GamepadIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -263,11 +291,19 @@ const GameClubPage = () => {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
-      <TopNavigation />
+      <TopNavigation
+        onMobileMenuClick={() => setIsSidebarOpen(true)}
+        showMobileMenu={isMobile}
+      />
       <div className="flex h-[calc(100vh-64px)] mt-16">
-        <Sidebar activeItem="Game Clubs" />
-        <main className="flex-1 overflow-auto">
-          <div className="container mx-auto p-6 max-w-6xl">
+        <Sidebar
+          activeItem="Game Clubs"
+          isMobile={isMobile}
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+        />
+        <main className="flex-1 overflow-auto w-full md:w-auto">
+          <div className="container mx-auto p-4 md:p-6 max-w-6xl">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
               <Button
@@ -297,7 +333,7 @@ const GameClubPage = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               {/* Main Content */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Game Info Card */}

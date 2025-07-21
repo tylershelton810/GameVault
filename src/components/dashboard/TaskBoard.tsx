@@ -682,7 +682,7 @@ const SocialTimeline = ({
         </Button>
       </div>
 
-      <div className="space-y-4 max-h-[500px] overflow-y-auto">
+      <div className="space-y-4 max-h-[400px] md:max-h-[500px] overflow-y-auto">
         {displayActivities.length > 0 ? (
           displayActivities.map((activity) => (
             <motion.div

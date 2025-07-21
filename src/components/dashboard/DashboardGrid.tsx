@@ -171,8 +171,8 @@ const DashboardGrid = ({
 
   if (loading) {
     return (
-      <div className="p-6 h-full">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="p-4 md:p-6 h-full">
+        <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, index) => (
             <Card
               key={index}
@@ -197,8 +197,8 @@ const DashboardGrid = ({
   }
 
   return (
-    <div className="p-6 h-full">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="p-4 md:p-6 h-full">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {/* Summary Cards */}
         <Card className="bg-white/90 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

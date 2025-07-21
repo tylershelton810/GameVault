@@ -3,6 +3,13 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   Home,
   LayoutDashboard,
   Calendar,
@@ -11,6 +18,7 @@ import {
   HelpCircle,
   FolderKanban,
   GamepadIcon,
+  Menu,
 } from "lucide-react";
 
 interface NavItem {
@@ -24,6 +32,9 @@ interface SidebarProps {
   items?: NavItem[];
   activeItem?: string;
   onItemClick?: (label: string) => void;
+  isMobile?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 import { useNavigate } from "react-router-dom";
@@ -49,11 +60,19 @@ const Sidebar = ({
   items = defaultNavItems,
   activeItem = "Social Timeline",
   onItemClick = () => {},
+  isMobile = false,
+  isOpen = false,
+  onOpenChange = () => {},
 }: SidebarProps) => {
   const navigate = useNavigate();
 
   const handleItemClick = (label: string) => {
     onItemClick(label);
+
+    // Close mobile sidebar after navigation
+    if (isMobile) {
+      onOpenChange(false);
+    }
 
     // Handle navigation based on the item clicked
     switch (label) {
@@ -77,8 +96,8 @@ const Sidebar = ({
         break;
     }
   };
-  return (
-    <div className="w-[280px] h-full bg-white/80 backdrop-blur-md border-r border-gray-200 flex flex-col">
+  const SidebarContent = () => (
+    <div className="h-full bg-white/80 backdrop-blur-md border-r border-gray-200 flex flex-col">
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-2 text-gray-900">GameVault</h2>
         <p className="text-sm text-gray-500">Track your gaming journey</p>
@@ -146,6 +165,31 @@ const Sidebar = ({
           </Button>
         ))}
       </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-md border border-gray-200 rounded-full h-10 w-10 shadow-sm"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[280px] p-0">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <div className="w-[280px] h-full hidden md:flex">
+      <SidebarContent />
     </div>
   );
 };

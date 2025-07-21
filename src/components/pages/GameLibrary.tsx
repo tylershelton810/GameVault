@@ -117,6 +117,8 @@ const GameLibrary = () => {
     Map<string, Map<string, boolean>>
   >(new Map());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // IGDB API search function
   const searchIGDBGames = useCallback(async (query: string) => {
@@ -333,6 +335,17 @@ const GameLibrary = () => {
     },
     [user, friendsGames],
   );
+
+  // Check for mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Initialize data loading
   useEffect(() => {
@@ -894,12 +907,21 @@ const GameLibrary = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopNavigation />
+      <TopNavigation
+        onMobileMenuClick={() => setIsSidebarOpen(true)}
+        showMobileMenu={isMobile}
+      />
       <div className="flex h-[calc(100vh-64px)] mt-16">
-        <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
+        <Sidebar
+          activeItem={activeItem}
+          onItemClick={setActiveItem}
+          isMobile={isMobile}
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+        />
 
-        <div className="flex-1 overflow-auto">
-          <div className="p-8">
+        <div className="flex-1 overflow-auto w-full md:w-auto">
+          <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -1217,7 +1239,7 @@ const GameLibrary = () => {
               </Dialog>
             </div>
 
-            <div className="flex gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -1227,24 +1249,26 @@ const GameLibrary = () => {
                   className="pl-10"
                 />
               </div>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dateAdded">Date Added</SelectItem>
-                  <SelectItem value="alphabetical">Alphabetical</SelectItem>
-                  <SelectItem value="rating">Rating</SelectItem>
-                  <SelectItem value="favoritesRating">
-                    Favorites then Rating
-                  </SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
-              </Button>
+              <div className="flex gap-2">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dateAdded">Date Added</SelectItem>
+                    <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                    <SelectItem value="rating">Rating</SelectItem>
+                    <SelectItem value="favoritesRating">
+                      Favorites then Rating
+                    </SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" className="shrink-0">
+                  <Filter className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Filter</span>
+                </Button>
+              </div>
             </div>
 
             <Tabs
@@ -1277,7 +1301,7 @@ const GameLibrary = () => {
                     </span>
                   </div>
                 ) : sortedGames.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                     {sortedGames.map((game) => (
                       <Card
                         key={game.id}
