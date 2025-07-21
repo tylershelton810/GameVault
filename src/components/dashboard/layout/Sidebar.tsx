@@ -10,6 +10,7 @@ import {
   Settings,
   HelpCircle,
   FolderKanban,
+  GamepadIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -34,6 +35,7 @@ const defaultNavItems: NavItem[] = [
     isActive: true,
   },
   { icon: <LayoutDashboard size={20} />, label: "Game Library" },
+  { icon: <GamepadIcon size={20} />, label: "Game Clubs" },
   { icon: <Calendar size={20} />, label: "Discover" },
   { icon: <Users size={20} />, label: "Friends" },
 ];
@@ -60,6 +62,9 @@ const Sidebar = ({
         break;
       case "Game Library":
         navigate("/game-library");
+        break;
+      case "Game Clubs":
+        navigate("/game-clubs");
         break;
       case "Discover":
         navigate("/discover");

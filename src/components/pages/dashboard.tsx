@@ -3,6 +3,7 @@ import TopNavigation from "../dashboard/layout/TopNavigation";
 import Sidebar from "../dashboard/layout/Sidebar";
 import DashboardGrid from "../dashboard/DashboardGrid";
 import SocialTimeline from "../dashboard/TaskBoard";
+import GameClubList from "../GameClub/GameClubList";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,7 +43,14 @@ const Home = () => {
             )}
           >
             <DashboardGrid isLoading={loading} />
-            <SocialTimeline isLoading={loading} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <GameClubList showCreateButton={false} limit={3} />
+              </div>
+              <div>
+                <SocialTimeline isLoading={loading} />
+              </div>
+            </div>
           </div>
         </main>
       </div>

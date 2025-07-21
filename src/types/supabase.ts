@@ -150,6 +150,242 @@ export type Database = {
           },
         ]
       }
+      game_club_members: {
+        Row: {
+          club_id: string
+          id: string
+          joined_at: string | null
+          role: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "game_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_club_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_club_messages: {
+        Row: {
+          club_id: string
+          created_at: string | null
+          id: string
+          is_pinned: boolean | null
+          message_text: string
+          message_type: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          message_text: string
+          message_type?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          message_text?: string
+          message_type?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_club_messages_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "game_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_club_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_club_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_club_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "game_club_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_club_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_club_reviews: {
+        Row: {
+          club_id: string
+          created_at: string | null
+          id: string
+          is_completed: boolean | null
+          rating: number
+          review_text: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          rating: number
+          review_text?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          rating?: number
+          review_text?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_club_reviews_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "game_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_club_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_clubs: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          description: string | null
+          end_date: string
+          game_cover_url: string | null
+          game_title: string
+          id: string
+          igdb_game_id: number
+          is_private: boolean | null
+          max_members: number | null
+          name: string
+          start_date: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          description?: string | null
+          end_date: string
+          game_cover_url?: string | null
+          game_title: string
+          id?: string
+          igdb_game_id: number
+          is_private?: boolean | null
+          max_members?: number | null
+          name: string
+          start_date: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          description?: string | null
+          end_date?: string
+          game_cover_url?: string | null
+          game_title?: string
+          id?: string
+          igdb_game_id?: number
+          is_private?: boolean | null
+          max_members?: number | null
+          name?: string
+          start_date?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_clubs_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_collections: {
         Row: {
           backlog_priority: number | null

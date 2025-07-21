@@ -124,21 +124,14 @@ const GamePage = () => {
   const [igdbGameId, setIgdbGameId] = useState<number | null>(null);
   const [gameTitle, setGameTitle] = useState<string>("");
 
-  // Edit form states
-  const [editForm, setEditForm] = useState({
-    status: "",
-    personal_rating: 0,
-    personal_notes: "",
-    is_favorite: false,
-    is_completed: false,
-  });
-
-  // Review form states
-  const [reviewForm, setReviewForm] = useState({
-    review_text: "",
-    rating: 0,
-    is_public: true,
-  });
+  // Unified form states for both add and edit
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [personalRating, setPersonalRating] = useState<number[]>([5]);
+  const [gameNotes, setGameNotes] = useState("");
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [reviewText, setReviewText] = useState("");
+  const [isLoadingReview, setIsLoadingReview] = useState(false);
 
   const [existingReview, setExistingReview] = useState<GameReview | null>(null);
 
@@ -163,14 +156,12 @@ const GamePage = () => {
         setIgdbGameId(data.igdb_game_id);
         setGameTitle(data.game_title);
 
-        // Initialize edit form with current data
-        setEditForm({
-          status: data.status,
-          personal_rating: data.personal_rating || 0,
-          personal_notes: data.personal_notes || "",
-          is_favorite: data.is_favorite || false,
-          is_completed: data.is_completed || false,
-        });
+        // Initialize form with current data
+        setSelectedStatus(data.status);
+        setPersonalRating([data.personal_rating || 5]);
+        setGameNotes(data.personal_notes || "");
+        setIsFavorite(data.is_favorite || false);
+        setIsCompleted(data.is_completed || false);
 
         // Fetch existing review
         const { data: reviewData } = await supabase
@@ -182,11 +173,8 @@ const GamePage = () => {
 
         if (reviewData) {
           setExistingReview(reviewData);
-          setReviewForm({
-            review_text: reviewData.review_text,
-            rating: reviewData.rating,
-            is_public: reviewData.is_public || true,
-          });
+          setReviewText(reviewData.review_text);
+          setPersonalRating([reviewData.rating]);
         }
       } else {
         // Game not in user's collection, check if it's an IGDB ID or find by IGDB ID
@@ -400,16 +388,21 @@ const GamePage = () => {
 
     setIsSaving(true);
     try {
+      const previousRating = gameCollection.personal_rating;
+      const previousCompleted = gameCollection.is_completed;
+
+      const updateData = {
+        status: selectedStatus,
+        personal_rating: selectedStatus === "played" ? personalRating[0] : null,
+        personal_notes: gameNotes || null,
+        is_favorite: isFavorite,
+        is_completed: isCompleted,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from("game_collections")
-        .update({
-          status: editForm.status,
-          personal_rating: editForm.personal_rating || null,
-          personal_notes: editForm.personal_notes || null,
-          is_favorite: editForm.is_favorite,
-          is_completed: editForm.is_completed,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", gameCollection.id);
 
       if (error) {
@@ -417,14 +410,110 @@ const GamePage = () => {
         return;
       }
 
+      // Log completion activity if game was just marked as completed
+      if (isCompleted && !previousCompleted) {
+        await supabase.from("activity_feed").insert({
+          user_id: user.id,
+          activity_type: "game_completed",
+          game_collection_id: gameCollection.id,
+          activity_data: {
+            game_title: gameCollection.game_title,
+            igdb_game_id: gameCollection.igdb_game_id,
+          },
+        });
+      }
+
+      // Log rating activity if rating was added or changed
+      if (
+        selectedStatus === "played" &&
+        personalRating[0] &&
+        personalRating[0] !== previousRating
+      ) {
+        await supabase.from("activity_feed").insert({
+          user_id: user.id,
+          activity_type: "game_rated",
+          game_collection_id: gameCollection.id,
+          activity_data: {
+            game_title: gameCollection.game_title,
+            rating: personalRating[0],
+            igdb_game_id: gameCollection.igdb_game_id,
+          },
+        });
+      }
+
+      // Handle review update/creation
+      if (selectedStatus === "played" && reviewText.trim()) {
+        if (existingReview) {
+          // Update existing review
+          const { error: reviewUpdateError } = await supabase
+            .from("game_reviews")
+            .update({
+              review_text: reviewText,
+              rating: personalRating[0],
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingReview.id);
+
+          if (!reviewUpdateError) {
+            // Log review update activity
+            await supabase.from("activity_feed").insert({
+              user_id: user.id,
+              activity_type: "review_posted",
+              game_collection_id: gameCollection.id,
+              game_review_id: existingReview.id,
+              activity_data: {
+                game_title: gameCollection.game_title,
+                rating: personalRating[0],
+                igdb_game_id: gameCollection.igdb_game_id,
+              },
+            });
+
+            setExistingReview({
+              ...existingReview,
+              review_text: reviewText,
+              rating: personalRating[0],
+            });
+          }
+        } else {
+          // Create new review
+          const { data: newReview, error: reviewInsertError } = await supabase
+            .from("game_reviews")
+            .insert({
+              user_id: user.id,
+              game_collection_id: gameCollection.id,
+              review_text: reviewText,
+              rating: personalRating[0],
+            })
+            .select()
+            .single();
+
+          if (!reviewInsertError && newReview) {
+            // Log new review activity
+            await supabase.from("activity_feed").insert({
+              user_id: user.id,
+              activity_type: "review_posted",
+              game_collection_id: gameCollection.id,
+              game_review_id: newReview.id,
+              activity_data: {
+                game_title: gameCollection.game_title,
+                rating: personalRating[0],
+                igdb_game_id: gameCollection.igdb_game_id,
+              },
+            });
+
+            setExistingReview(newReview);
+          }
+        }
+      }
+
       // Update local state
       setGameCollection({
         ...gameCollection,
-        status: editForm.status,
-        personal_rating: editForm.personal_rating || null,
-        personal_notes: editForm.personal_notes || null,
-        is_favorite: editForm.is_favorite,
-        is_completed: editForm.is_completed,
+        status: selectedStatus,
+        personal_rating: selectedStatus === "played" ? personalRating[0] : null,
+        personal_notes: gameNotes || null,
+        is_favorite: isFavorite,
+        is_completed: isCompleted,
       });
 
       setIsEditDialogOpen(false);
@@ -436,23 +525,29 @@ const GamePage = () => {
   };
 
   // Add game to user's collection
-  const handleAddGame = async (status: string) => {
-    if (!user || !gameDetails || !igdbGameId) return;
+  const handleAddGame = async () => {
+    if (!user || !gameDetails || !igdbGameId || !selectedStatus) return;
 
     setIsSaving(true);
     try {
-      const { data, error } = await supabase
+      const gameData = {
+        user_id: user.id,
+        igdb_game_id: igdbGameId,
+        game_title: gameDetails.name,
+        game_cover_url: gameDetails.cover?.url
+          ? `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`
+          : null,
+        status: selectedStatus,
+        personal_notes: gameNotes || null,
+        personal_rating: selectedStatus === "played" ? personalRating[0] : null,
+        is_completed: isCompleted,
+        is_favorite: isFavorite,
+        date_added: new Date().toISOString(),
+      };
+
+      const { data: insertedGameData, error } = await supabase
         .from("game_collections")
-        .insert({
-          user_id: user.id,
-          igdb_game_id: igdbGameId,
-          game_title: gameDetails.name,
-          game_cover_url: gameDetails.cover?.url
-            ? `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`
-            : null,
-          status: status,
-          date_added: new Date().toISOString(),
-        })
+        .insert([gameData])
         .select()
         .single();
 
@@ -461,21 +556,83 @@ const GamePage = () => {
         return;
       }
 
-      // Update local state
-      setGameCollection(data);
-      setHasUserGame(true);
-      setGameTitle(data.game_title);
-
-      // Initialize edit form
-      setEditForm({
-        status: data.status,
-        personal_rating: 0,
-        personal_notes: "",
-        is_favorite: false,
-        is_completed: false,
+      // Log activity to activity_feed
+      await supabase.from("activity_feed").insert({
+        user_id: user.id,
+        activity_type: "game_added",
+        game_collection_id: insertedGameData.id,
+        activity_data: {
+          game_title: gameDetails.name,
+          status: selectedStatus,
+          igdb_game_id: igdbGameId,
+        },
       });
 
-      setIsAddGameDialogOpen(false);
+      // If the game is marked as completed, log completion activity
+      if (isCompleted) {
+        await supabase.from("activity_feed").insert({
+          user_id: user.id,
+          activity_type: "game_completed",
+          game_collection_id: insertedGameData.id,
+          activity_data: {
+            game_title: gameDetails.name,
+            igdb_game_id: igdbGameId,
+          },
+        });
+      }
+
+      // If there's a rating, log rating activity
+      if (selectedStatus === "played" && personalRating[0]) {
+        await supabase.from("activity_feed").insert({
+          user_id: user.id,
+          activity_type: "game_rated",
+          game_collection_id: insertedGameData.id,
+          activity_data: {
+            game_title: gameDetails.name,
+            rating: personalRating[0],
+            igdb_game_id: igdbGameId,
+          },
+        });
+      }
+
+      // If there's a review and rating, create a review entry
+      if (selectedStatus === "played" && reviewText.trim()) {
+        const { data: reviewData, error: reviewError } = await supabase
+          .from("game_reviews")
+          .insert({
+            user_id: user.id,
+            game_collection_id: insertedGameData.id,
+            review_text: reviewText,
+            rating: personalRating[0],
+          })
+          .select()
+          .single();
+
+        if (!reviewError && reviewData) {
+          // Log review activity
+          await supabase.from("activity_feed").insert({
+            user_id: user.id,
+            activity_type: "review_posted",
+            game_collection_id: insertedGameData.id,
+            game_review_id: reviewData.id,
+            activity_data: {
+              game_title: gameDetails.name,
+              rating: personalRating[0],
+              igdb_game_id: igdbGameId,
+            },
+          });
+
+          setExistingReview(reviewData);
+        }
+      }
+
+      // Update local state
+      setGameCollection(insertedGameData);
+      setHasUserGame(true);
+      setGameTitle(insertedGameData.game_title);
+
+      // Reset form
+      resetAddGameForm();
     } catch (error) {
       console.error("Error adding game to collection:", error);
     } finally {
@@ -483,62 +640,45 @@ const GamePage = () => {
     }
   };
 
-  // Save review
-  const handleSaveReview = async () => {
-    if (!gameCollection || !user || !reviewForm.review_text.trim()) return;
+  const resetAddGameForm = () => {
+    setSelectedStatus("");
+    setGameNotes("");
+    setPersonalRating([5]);
+    setReviewText("");
+    setIsCompleted(false);
+    setIsFavorite(false);
+    setIsAddGameDialogOpen(false);
+  };
 
-    setIsSaving(true);
+  // Load existing review when editing
+  const loadExistingReview = async () => {
+    if (!gameCollection || selectedStatus !== "played") {
+      setReviewText("");
+      return;
+    }
+
+    setIsLoadingReview(true);
     try {
-      if (existingReview) {
-        // Update existing review
-        const { error } = await supabase
-          .from("game_reviews")
-          .update({
-            review_text: reviewForm.review_text,
-            rating: reviewForm.rating,
-            is_public: reviewForm.is_public,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingReview.id);
+      const { data: existingReviewData } = await supabase
+        .from("game_reviews")
+        .select("*")
+        .eq("game_collection_id", gameCollection.id)
+        .single();
 
-        if (error) {
-          console.error("Error updating review:", error);
-          return;
-        }
-
-        setExistingReview({
-          ...existingReview,
-          review_text: reviewForm.review_text,
-          rating: reviewForm.rating,
-          is_public: reviewForm.is_public,
-        });
+      if (existingReviewData) {
+        setExistingReview(existingReviewData);
+        setReviewText(existingReviewData.review_text);
+        setPersonalRating([existingReviewData.rating]);
       } else {
-        // Create new review
-        const { data, error } = await supabase
-          .from("game_reviews")
-          .insert({
-            game_collection_id: gameCollection.id,
-            user_id: user.id,
-            review_text: reviewForm.review_text,
-            rating: reviewForm.rating,
-            is_public: reviewForm.is_public,
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error("Error creating review:", error);
-          return;
-        }
-
-        setExistingReview(data);
+        setReviewText("");
+        setExistingReview(null);
       }
-
-      setIsReviewDialogOpen(false);
     } catch (error) {
-      console.error("Error saving review:", error);
+      console.error("Error loading review:", error);
+      setReviewText("");
+      setExistingReview(null);
     } finally {
-      setIsSaving(false);
+      setIsLoadingReview(false);
     }
   };
 
@@ -658,7 +798,26 @@ const GamePage = () => {
                           </h3>
                           <Dialog
                             open={isEditDialogOpen}
-                            onOpenChange={setIsEditDialogOpen}
+                            onOpenChange={(open) => {
+                              setIsEditDialogOpen(open);
+                              if (open) {
+                                // Initialize form with current data when opening
+                                setSelectedStatus(gameCollection.status);
+                                setPersonalRating([
+                                  gameCollection.personal_rating || 5,
+                                ]);
+                                setGameNotes(
+                                  gameCollection.personal_notes || "",
+                                );
+                                setIsFavorite(
+                                  gameCollection.is_favorite || false,
+                                );
+                                setIsCompleted(
+                                  gameCollection.is_completed || false,
+                                );
+                                loadExistingReview();
+                              }
+                            }}
                           >
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm">
@@ -666,124 +825,144 @@ const GamePage = () => {
                                 Edit
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-md">
+                            <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>Edit Game Data</DialogTitle>
-                                <DialogDescription>
-                                  Update your rating, status, and notes for this
-                                  game.
-                                </DialogDescription>
+                                <DialogTitle>
+                                  Edit Game: {gameCollection.game_title}
+                                </DialogTitle>
                               </DialogHeader>
                               <div className="space-y-4">
-                                <div>
-                                  <Label htmlFor="status">Status</Label>
-                                  <Select
-                                    value={editForm.status}
-                                    onValueChange={(value) =>
-                                      setEditForm({
-                                        ...editForm,
-                                        status: value,
-                                      })
-                                    }
+                                <div className="border rounded-md p-4 bg-blue-50">
+                                  <div className="flex items-start gap-3">
+                                    <img
+                                      src={
+                                        gameCollection.game_cover_url ||
+                                        `https:${gameDetails?.cover?.url?.replace("t_thumb", "t_cover_small")}`
+                                      }
+                                      alt={gameCollection.game_title}
+                                      className="w-16 h-20 object-cover rounded"
+                                    />
+                                    <div className="flex-1">
+                                      <h4 className="font-medium">
+                                        {gameCollection.game_title}
+                                      </h4>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <Select
+                                  value={selectedStatus}
+                                  onValueChange={setSelectedStatus}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="playing">
+                                      Playing
+                                    </SelectItem>
+                                    <SelectItem value="played">
+                                      Played
+                                    </SelectItem>
+                                    <SelectItem value="want-to-play">
+                                      Want to Play
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                <div className="flex items-center space-x-4">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="edit-completed"
+                                      checked={isCompleted}
+                                      onCheckedChange={setIsCompleted}
+                                    />
+                                    <Label htmlFor="edit-completed">
+                                      Completed
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="edit-favorite"
+                                      checked={isFavorite}
+                                      onCheckedChange={setIsFavorite}
+                                    />
+                                    <Label htmlFor="edit-favorite">
+                                      Favorite
+                                    </Label>
+                                  </div>
+                                </div>
+
+                                {selectedStatus === "played" && (
+                                  <>
+                                    <div className="space-y-2">
+                                      <Label>
+                                        Rating: {personalRating[0]}/10
+                                      </Label>
+                                      <Slider
+                                        value={personalRating}
+                                        onValueChange={setPersonalRating}
+                                        max={10}
+                                        min={0.5}
+                                        step={0.5}
+                                        className="w-full"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label>Review</Label>
+                                      {isLoadingReview ? (
+                                        <div className="flex items-center justify-center p-4 border rounded">
+                                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                          <span className="text-sm text-gray-600">
+                                            Loading review...
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <Textarea
+                                          placeholder="Write a review (optional)"
+                                          value={reviewText}
+                                          onChange={(e) =>
+                                            setReviewText(e.target.value)
+                                          }
+                                          rows={3}
+                                        />
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+
+                                <Textarea
+                                  placeholder="Personal notes (optional)"
+                                  value={gameNotes}
+                                  onChange={(e) => setGameNotes(e.target.value)}
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => {
+                                      setIsEditDialogOpen(false);
+                                      resetAddGameForm();
+                                    }}
                                   >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="playing">
-                                        Playing
-                                      </SelectItem>
-                                      <SelectItem value="played">
-                                        Played
-                                      </SelectItem>
-                                      <SelectItem value="want-to-play">
-                                        Want to Play
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Label htmlFor="rating">
-                                    Rating: {editForm.personal_rating}/10
-                                  </Label>
-                                  <Slider
-                                    value={[editForm.personal_rating]}
-                                    onValueChange={(value) =>
-                                      setEditForm({
-                                        ...editForm,
-                                        personal_rating: value[0],
-                                      })
-                                    }
-                                    max={10}
-                                    min={0}
-                                    step={0.5}
-                                    className="mt-2"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="notes">Personal Notes</Label>
-                                  <Textarea
-                                    value={editForm.personal_notes}
-                                    onChange={(e) =>
-                                      setEditForm({
-                                        ...editForm,
-                                        personal_notes: e.target.value,
-                                      })
-                                    }
-                                    placeholder="Add your personal notes..."
-                                    className="mt-1"
-                                  />
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id="favorite"
-                                    checked={editForm.is_favorite}
-                                    onCheckedChange={(checked) =>
-                                      setEditForm({
-                                        ...editForm,
-                                        is_favorite: !!checked,
-                                      })
-                                    }
-                                  />
-                                  <Label htmlFor="favorite">
-                                    Mark as favorite
-                                  </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id="completed"
-                                    checked={editForm.is_completed}
-                                    onCheckedChange={(checked) =>
-                                      setEditForm({
-                                        ...editForm,
-                                        is_completed: !!checked,
-                                      })
-                                    }
-                                  />
-                                  <Label htmlFor="completed">
-                                    Mark as completed
-                                  </Label>
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    className="flex-1"
+                                    onClick={handleSaveGameData}
+                                    disabled={!selectedStatus || isSaving}
+                                  >
+                                    {isSaving ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Updating...
+                                      </>
+                                    ) : (
+                                      "Update Game"
+                                    )}
+                                  </Button>
                                 </div>
                               </div>
-                              <DialogFooter>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => setIsEditDialogOpen(false)}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  onClick={handleSaveGameData}
-                                  disabled={isSaving}
-                                >
-                                  {isSaving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                  ) : (
-                                    <Save className="w-4 h-4 mr-2" />
-                                  )}
-                                  Save
-                                </Button>
-                              </DialogFooter>
                             </DialogContent>
                           </Dialog>
                         </div>
@@ -822,111 +1001,12 @@ const GamePage = () => {
                               Your Review
                             </h4>
                             <div className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="flex">
-                                  {renderStars(existingReview.rating)}
-                                </div>
-                                <span className="text-sm font-medium text-gray-900">
-                                  {existingReview.rating}/10
-                                </span>
-                              </div>
                               <p className="text-sm text-gray-700">
                                 {existingReview.review_text}
                               </p>
                             </div>
                           </div>
                         )}
-
-                        <div className="flex gap-2 mb-4">
-                          <Dialog
-                            open={isReviewDialogOpen}
-                            onOpenChange={setIsReviewDialogOpen}
-                          >
-                            <DialogTrigger asChild></DialogTrigger>
-                            <DialogContent className="max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>
-                                  {existingReview
-                                    ? "Edit Review"
-                                    : "Write Review"}
-                                </DialogTitle>
-                                <DialogDescription>
-                                  Share your thoughts about this game.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label htmlFor="review-rating">
-                                    Rating: {reviewForm.rating}/10
-                                  </Label>
-                                  <Slider
-                                    value={[reviewForm.rating]}
-                                    onValueChange={(value) =>
-                                      setReviewForm({
-                                        ...reviewForm,
-                                        rating: value[0],
-                                      })
-                                    }
-                                    max={10}
-                                    min={0}
-                                    step={0.5}
-                                    className="mt-2"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="review-text">Review</Label>
-                                  <Textarea
-                                    value={reviewForm.review_text}
-                                    onChange={(e) =>
-                                      setReviewForm({
-                                        ...reviewForm,
-                                        review_text: e.target.value,
-                                      })
-                                    }
-                                    placeholder="Write your review..."
-                                    className="mt-1 min-h-[100px]"
-                                  />
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id="public"
-                                    checked={reviewForm.is_public}
-                                    onCheckedChange={(checked) =>
-                                      setReviewForm({
-                                        ...reviewForm,
-                                        is_public: !!checked,
-                                      })
-                                    }
-                                  />
-                                  <Label htmlFor="public">
-                                    Make review public
-                                  </Label>
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => setIsReviewDialogOpen(false)}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  onClick={handleSaveReview}
-                                  disabled={
-                                    isSaving || !reviewForm.review_text.trim()
-                                  }
-                                >
-                                  {isSaving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                  ) : (
-                                    <Save className="w-4 h-4 mr-2" />
-                                  )}
-                                  {existingReview ? "Update" : "Save"} Review
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
 
                         <div className="text-xs text-gray-500">
                           Added{" "}
@@ -953,7 +1033,18 @@ const GamePage = () => {
                           </p>
                           <Dialog
                             open={isAddGameDialogOpen}
-                            onOpenChange={setIsAddGameDialogOpen}
+                            onOpenChange={(open) => {
+                              setIsAddGameDialogOpen(open);
+                              if (open) {
+                                // Reset form when opening
+                                setSelectedStatus("");
+                                setPersonalRating([5]);
+                                setGameNotes("");
+                                setIsCompleted(false);
+                                setIsFavorite(false);
+                                setReviewText("");
+                              }
+                            }}
                           >
                             <DialogTrigger asChild>
                               <Button className="w-full">
@@ -961,66 +1052,121 @@ const GamePage = () => {
                                 Add Game
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-md">
+                            <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>
-                                  Add Game to Collection
-                                </DialogTitle>
-                                <DialogDescription>
-                                  Choose the status for this game in your
-                                  collection.
-                                </DialogDescription>
+                                <DialogTitle>Add Game to Library</DialogTitle>
                               </DialogHeader>
-                              <div className="space-y-3">
+                              <div className="space-y-4">
+                                {gameDetails && (
+                                  <div className="border rounded-md p-4 bg-blue-50">
+                                    <div className="flex items-start gap-3">
+                                      {gameDetails.cover && (
+                                        <img
+                                          src={`https:${gameDetails.cover.url.replace("t_thumb", "t_cover_small")}`}
+                                          alt={gameDetails.name}
+                                          className="w-16 h-20 object-cover rounded"
+                                        />
+                                      )}
+                                      <div className="flex-1">
+                                        <h4 className="font-medium">
+                                          {gameDetails.name}
+                                        </h4>
+                                        {gameDetails.rating && (
+                                          <p className="text-sm text-gray-600">
+                                            Rating:{" "}
+                                            {Math.round(gameDetails.rating)}/100
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <Select
+                                  value={selectedStatus}
+                                  onValueChange={setSelectedStatus}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="playing">
+                                      Playing
+                                    </SelectItem>
+                                    <SelectItem value="played">
+                                      Played
+                                    </SelectItem>
+                                    <SelectItem value="want-to-play">
+                                      Want to Play
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                <div className="flex items-center space-x-4">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="completed"
+                                      checked={isCompleted}
+                                      onCheckedChange={setIsCompleted}
+                                    />
+                                    <Label htmlFor="completed">Completed</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="favorite"
+                                      checked={isFavorite}
+                                      onCheckedChange={setIsFavorite}
+                                    />
+                                    <Label htmlFor="favorite">Favorite</Label>
+                                  </div>
+                                </div>
+
+                                {selectedStatus === "played" && (
+                                  <>
+                                    <div className="space-y-2">
+                                      <Label>
+                                        Rating: {personalRating[0]}/10
+                                      </Label>
+                                      <Slider
+                                        value={personalRating}
+                                        onValueChange={setPersonalRating}
+                                        max={10}
+                                        min={0.5}
+                                        step={0.5}
+                                        className="w-full"
+                                      />
+                                    </div>
+                                    <Textarea
+                                      placeholder="Write a review (optional)"
+                                      value={reviewText}
+                                      onChange={(e) =>
+                                        setReviewText(e.target.value)
+                                      }
+                                      rows={3}
+                                    />
+                                  </>
+                                )}
+
+                                <Textarea
+                                  placeholder="Personal notes (optional)"
+                                  value={gameNotes}
+                                  onChange={(e) => setGameNotes(e.target.value)}
+                                />
                                 <Button
-                                  onClick={() => handleAddGame("playing")}
-                                  disabled={isSaving}
-                                  className="w-full justify-start"
-                                  variant="outline"
+                                  className="w-full"
+                                  onClick={handleAddGame}
+                                  disabled={!selectedStatus || isSaving}
                                 >
                                   {isSaving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                    <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      Adding to Library...
+                                    </>
                                   ) : (
-                                    <div className="w-3 h-3 rounded-full bg-green-500 mr-3" />
+                                    "Add to Library"
                                   )}
-                                  Playing
-                                </Button>
-                                <Button
-                                  onClick={() => handleAddGame("played")}
-                                  disabled={isSaving}
-                                  className="w-full justify-start"
-                                  variant="outline"
-                                >
-                                  {isSaving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                  ) : (
-                                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-3" />
-                                  )}
-                                  Played
-                                </Button>
-                                <Button
-                                  onClick={() => handleAddGame("want-to-play")}
-                                  disabled={isSaving}
-                                  className="w-full justify-start"
-                                  variant="outline"
-                                >
-                                  {isSaving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                  ) : (
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-3" />
-                                  )}
-                                  Want to Play
                                 </Button>
                               </div>
-                              <DialogFooter>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => setIsAddGameDialogOpen(false)}
-                                  disabled={isSaving}
-                                >
-                                  Cancel
-                                </Button>
-                              </DialogFooter>
                             </DialogContent>
                           </Dialog>
                         </div>

@@ -11,6 +11,8 @@ import Friends from "./components/pages/Friends";
 import SocialTimeline from "./components/pages/SocialTimeline";
 import Discover from "./components/pages/Discover";
 import GamePage from "./components/pages/GamePage";
+import GameClubs from "./components/pages/GameClubs";
+import GameClubPage from "./components/GameClub/GameClubPage";
 import { AuthProvider, useAuth } from "../supabase/auth";
 import { Toaster } from "./components/ui/toaster";
 import { LoadingScreen, LoadingSpinner } from "./components/ui/loading-spinner";
@@ -82,6 +84,22 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <GamePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/game-clubs"
+          element={
+            <PrivateRoute>
+              <GameClubs />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/game-club/:clubId"
+          element={
+            <PrivateRoute>
+              <GameClubPage />
             </PrivateRoute>
           }
         />
