@@ -279,10 +279,10 @@ const GameClubPage = () => {
             isOpen={isSidebarOpen}
             onOpenChange={setIsSidebarOpen}
           />
-          <main className="flex-1 overflow-auto flex items-center justify-center w-full md:w-auto">
+          <main className="flex-1 overflow-auto flex items-center justify-center w-full md:w-auto bg-background">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600">Loading Game Club...</p>
+              <p className="text-muted-foreground">Loading Game Club...</p>
             </div>
           </main>
         </div>
@@ -304,13 +304,13 @@ const GameClubPage = () => {
             isOpen={isSidebarOpen}
             onOpenChange={setIsSidebarOpen}
           />
-          <main className="flex-1 overflow-auto flex items-center justify-center w-full md:w-auto">
+          <main className="flex-1 overflow-auto flex items-center justify-center w-full md:w-auto bg-background">
             <div className="text-center">
               <GamepadIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl font-semibold text-foreground mb-2">
                 Club Not Found
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 This Game Club doesn't exist or you don't have access to it.
               </p>
               <Button onClick={() => navigate("/game-clubs")}>
@@ -327,7 +327,7 @@ const GameClubPage = () => {
   const daysRemaining = getDaysRemaining(club.end_date);
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7]">
+    <div className="min-h-screen bg-background">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}
@@ -339,7 +339,7 @@ const GameClubPage = () => {
           isOpen={isSidebarOpen}
           onOpenChange={setIsSidebarOpen}
         />
-        <main className="flex-1 overflow-auto w-full md:w-auto">
+        <main className="flex-1 overflow-auto w-full md:w-auto bg-background">
           <div className="container mx-auto p-4 md:p-6 max-w-6xl">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
@@ -352,22 +352,26 @@ const GameClubPage = () => {
                 Back
               </Button>
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {club.name}
-                </h1>
-                <p className="text-gray-600">Playing: {club.game_title}</p>
+                <div className="text-center">
+                  <h1 className="text-2xl font-bold text-foreground">
+                    {club.name}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Playing: {club.game_title}
+                  </p>
+                </div>
+                {userMembership.role !== "creator" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLeaveClub}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <UserMinus className="w-4 h-4 mr-2" />
+                    Leave Club
+                  </Button>
+                )}
               </div>
-              {userMembership.role !== "creator" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLeaveClub}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <UserMinus className="w-4 h-4 mr-2" />
-                  Leave Club
-                </Button>
-              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -388,11 +392,11 @@ const GameClubPage = () => {
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-4">
                           <div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                            <h2 className="text-xl font-semibold text-foreground mb-2">
                               {club.game_title}
                             </h2>
                             {club.description && (
-                              <p className="text-gray-600 mb-3">
+                              <p className="text-muted-foreground mb-3">
                                 {club.description}
                               </p>
                             )}
@@ -406,7 +410,7 @@ const GameClubPage = () => {
 
                         {/* Progress */}
                         <div className="mb-4">
-                          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                          <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                             <span>Progress</span>
                             <span>
                               {daysRemaining > 0
@@ -420,20 +424,20 @@ const GameClubPage = () => {
                         {/* Dates */}
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <div className="flex items-center gap-2 text-gray-600 mb-1">
+                            <div className="flex items-center gap-2 text-muted-foreground mb-1">
                               <Calendar className="w-4 h-4" />
                               <span>Start Date</span>
                             </div>
-                            <p className="font-medium">
+                            <p className="font-medium text-foreground">
                               {formatDate(club.start_date)}
                             </p>
                           </div>
                           <div>
-                            <div className="flex items-center gap-2 text-gray-600 mb-1">
+                            <div className="flex items-center gap-2 text-muted-foreground mb-1">
                               <Clock className="w-4 h-4" />
                               <span>End Date</span>
                             </div>
-                            <p className="font-medium">
+                            <p className="font-medium text-foreground">
                               {formatDate(club.end_date)}
                             </p>
                           </div>
@@ -460,7 +464,7 @@ const GameClubPage = () => {
                         {clubReviews.map((review) => (
                           <div
                             key={review.id}
-                            className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                            className="border border-border rounded-lg p-4 bg-muted"
                           >
                             <div className="flex items-start gap-3">
                               <Avatar className="h-10 w-10">
@@ -477,23 +481,23 @@ const GameClubPage = () => {
                               </Avatar>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <span className="font-medium text-gray-900">
+                                  <span className="font-medium text-foreground">
                                     {review.user.full_name}
                                   </span>
                                   <div className="flex items-center gap-1">
                                     <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                                    <span className="text-sm font-medium">
+                                    <span className="text-sm font-medium text-foreground">
                                       {review.rating.toFixed(1)}/10
                                     </span>
                                   </div>
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs text-muted-foreground">
                                     {new Date(
                                       review.created_at,
                                     ).toLocaleDateString()}
                                   </span>
                                 </div>
                                 {review.review_text && (
-                                  <p className="text-gray-700 text-sm leading-relaxed">
+                                  <p className="text-foreground text-sm leading-relaxed">
                                     {review.review_text}
                                   </p>
                                 )}
@@ -516,7 +520,7 @@ const GameClubPage = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 mb-4">
+                      <p className="text-muted-foreground mb-4">
                         The club has ended! Share your thoughts about{" "}
                         {club.game_title}.
                       </p>
@@ -559,14 +563,14 @@ const GameClubPage = () => {
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-foreground truncate">
                                 {member.user.full_name}
                               </p>
                               <div className="flex items-center gap-2">
                                 {member.role === "creator" && (
                                   <Crown className="w-3 h-3 text-yellow-500" />
                                 )}
-                                <span className="text-xs text-gray-500 capitalize">
+                                <span className="text-xs text-muted-foreground capitalize">
                                   {member.role}
                                 </span>
                               </div>
@@ -585,7 +589,9 @@ const GameClubPage = () => {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div>
-                      <p className="text-sm text-gray-600">Created by</p>
+                      <p className="text-sm text-muted-foreground">
+                        Created by
+                      </p>
                       <div className="flex items-center gap-2 mt-1">
                         <Avatar className="h-6 w-6">
                           <AvatarImage
@@ -599,20 +605,20 @@ const GameClubPage = () => {
                             {club.creator.full_name[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium text-foreground">
                           {club.creator.full_name}
                         </span>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Privacy</p>
-                      <p className="text-sm font-medium">
+                      <p className="text-sm text-muted-foreground">Privacy</p>
+                      <p className="text-sm font-medium text-foreground">
                         {club.is_private ? "Private" : "Public"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Created</p>
-                      <p className="text-sm font-medium">
+                      <p className="text-sm text-muted-foreground">Created</p>
+                      <p className="text-sm font-medium text-foreground">
                         {new Date(club.created_at).toLocaleDateString()}
                       </p>
                     </div>

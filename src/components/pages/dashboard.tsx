@@ -32,7 +32,7 @@ const Home = () => {
     }, 2000);
   };
   return (
-    <div className="min-h-screen bg-[#f5f5f7]">
+    <div className="min-h-screen bg-background">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}

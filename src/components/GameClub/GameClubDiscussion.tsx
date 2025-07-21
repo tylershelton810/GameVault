@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
+import { useTheme } from "@/lib/theme";
 
 interface Message {
   id: string;
@@ -46,6 +47,7 @@ interface GameClubDiscussionProps {
 
 const GameClubDiscussion: React.FC<GameClubDiscussionProps> = ({ clubId }) => {
   const { user } = useAuth();
+  const { currentTheme } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -272,14 +274,18 @@ const GameClubDiscussion: React.FC<GameClubDiscussionProps> = ({ clubId }) => {
         {/* Pinned Messages */}
         {pinnedMessages.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Pin className="w-4 h-4" />
               Pinned Messages
             </div>
             {pinnedMessages.map((message) => (
               <div
                 key={message.id}
-                className="bg-yellow-50 border border-yellow-200 rounded-lg p-3"
+                className="rounded-lg p-3"
+                style={{
+                  backgroundColor: `hsl(${currentTheme.colors.accent} / 0.1)`,
+                  border: `1px solid hsl(${currentTheme.colors.accent} / 0.3)`,
+                }}
               >
                 <div className="flex items-start gap-3">
                   <Avatar className="h-8 w-8">
@@ -296,15 +302,27 @@ const GameClubDiscussion: React.FC<GameClubDiscussionProps> = ({ clubId }) => {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-foreground">
                         {message.user.full_name}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {formatTime(message.created_at)}
                       </span>
-                      <Pin className="w-3 h-3 text-yellow-600" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 hover:bg-transparent"
+                        onClick={() => togglePin(message.id, message.is_pinned)}
+                      >
+                        <Pin
+                          className="w-3 h-3"
+                          style={{
+                            color: `hsl(${currentTheme.colors.accent})`,
+                          }}
+                        />
+                      </Button>
                     </div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-foreground">
                       {message.message_text}
                     </p>
                   </div>
@@ -318,8 +336,8 @@ const GameClubDiscussion: React.FC<GameClubDiscussionProps> = ({ clubId }) => {
         <ScrollArea className="h-96" ref={scrollAreaRef}>
           <div className="space-y-4 pr-4">
             {regularMessages.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <MessageCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
                 <p>No messages yet. Start the conversation!</p>
               </div>
             ) : (
@@ -344,14 +362,14 @@ const GameClubDiscussion: React.FC<GameClubDiscussionProps> = ({ clubId }) => {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-foreground">
                             {message.user.full_name}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {formatTime(message.created_at)}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700 mb-2">
+                        <p className="text-sm text-foreground mb-2">
                           {message.message_text}
                         </p>
 
@@ -370,8 +388,8 @@ const GameClubDiscussion: React.FC<GameClubDiscussionProps> = ({ clubId }) => {
                                     size="sm"
                                     className={`h-6 px-2 text-xs ${
                                       userReacted
-                                        ? "bg-blue-50 border-blue-200 text-blue-700"
-                                        : "hover:bg-gray-50"
+                                        ? "bg-primary/10 border-primary/20 text-primary"
+                                        : "hover:bg-muted"
                                     }`}
                                     onClick={() =>
                                       toggleReaction(message.id, emoji)

@@ -273,7 +273,7 @@ const Discover = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}
@@ -290,10 +290,10 @@ const Discover = () => {
           <div className="p-4 md:p-8">
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-2">
-                <Compass className="w-8 h-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Discover</h1>
+                <Compass className="w-8 h-8 text-primary" />
+                <h1 className="text-3xl font-bold text-foreground">Discover</h1>
               </div>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Find your next favorite game based on your preferences and
                 friends' activity
               </p>
@@ -301,17 +301,17 @@ const Discover = () => {
 
             {/* Because you loved... Section */}
             <div className="mb-12">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+              <h2 className="text-2xl font-semibold text-foreground mb-6">
                 Because you loved...
               </h2>
-              <div className="bg-white rounded-lg border p-8 text-center">
+              <div className="bg-card rounded-lg border p-8 text-center">
                 <div className="text-gray-400 mb-4">
                   <Compass className="w-16 h-16 mx-auto" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   Personalized recommendations coming soon!
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   We're working on analyzing your gaming preferences to suggest
                   games you'll love. Check back soon for personalized
                   recommendations based on your favorite games and ratings.
@@ -322,12 +322,12 @@ const Discover = () => {
             {/* Trending with Friends Section */}
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-                <h2 className="text-2xl font-semibold text-gray-900">
+                <TrendingUp className="w-6 h-6 text-accent" />
+                <h2 className="text-2xl font-semibold text-foreground">
                   Trending with Friends
                 </h2>
               </div>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Games your friends have recently started playing or rated highly
                 (8+) in the past 2 weeks
               </p>
@@ -335,7 +335,7 @@ const Discover = () => {
               {isLoadingTrending ? (
                 <div className="flex justify-center items-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin" />
-                  <span className="ml-2 text-gray-600">
+                  <span className="ml-2 text-muted-foreground">
                     Loading trending games...
                   </span>
                 </div>
@@ -399,7 +399,7 @@ const Discover = () => {
                           </div>
                         </div>
                         <CardContent className="p-3">
-                          <h3 className="font-semibold text-xs mb-2 line-clamp-2">
+                          <h3 className="font-semibold text-xs mb-2 line-clamp-2 text-foreground">
                             {game.game_title}
                           </h3>
                           <div className="space-y-1.5">
@@ -422,17 +422,17 @@ const Discover = () => {
                                           "Y")[0].toUpperCase()}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span className="text-blue-700 font-medium">
+                                    <span className="text-primary font-medium">
                                       You
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1">
                                     {game.userRating && (
-                                      <span className="text-blue-700 font-medium">
+                                      <span className="text-primary font-medium">
                                         {game.userRating}/10
                                       </span>
                                     )}
-                                    <Badge className="text-[8px] px-1 py-0 bg-blue-100 text-blue-800">
+                                    <Badge className="text-[8px] px-1 py-0 bg-primary/10 text-primary">
                                       {game.userStatus === "playing"
                                         ? "Playing"
                                         : game.userStatus === "played"
@@ -444,7 +444,7 @@ const Discover = () => {
                               </div>
                             )}
 
-                            <p className="text-[10px] text-gray-600 font-medium">
+                            <p className="text-[10px] text-muted-foreground font-medium">
                               {game.friends.length} friend
                               {game.friends.length > 1 ? "s" : ""} active:
                             </p>
@@ -467,7 +467,7 @@ const Discover = () => {
                                         {friend.name[0]}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span className="text-gray-700 truncate max-w-16">
+                                    <span className="text-foreground truncate max-w-16">
                                       {friend.name}
                                     </span>
                                     <div className="flex gap-0.5">
@@ -481,11 +481,11 @@ const Discover = () => {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     {friend.rating && (
-                                      <span className="text-gray-600">
+                                      <span className="text-muted-foreground">
                                         {friend.rating}/10
                                       </span>
                                     )}
-                                    <Badge className="text-[8px] px-1 py-0 bg-gray-100 text-gray-800">
+                                    <Badge className="text-[8px] px-1 py-0 bg-muted text-muted-foreground">
                                       {friend.status === "playing"
                                         ? "Playing"
                                         : friend.status === "played"
@@ -496,7 +496,7 @@ const Discover = () => {
                                 </div>
                               ))}
                               {game.friends.length > 3 && (
-                                <p className="text-[9px] text-gray-500 text-center">
+                                <p className="text-[9px] text-muted-foreground text-center">
                                   +{game.friends.length - 3} more
                                 </p>
                               )}
@@ -509,14 +509,14 @@ const Discover = () => {
                   <ScrollBar orientation="horizontal" />
                 </ScrollArea>
               ) : (
-                <div className="bg-white rounded-lg border p-8 text-center">
+                <div className="bg-card rounded-lg border p-8 text-center">
                   <div className="text-gray-400 mb-4">
                     <TrendingUp className="w-16 h-16 mx-auto" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <h3 className="text-lg font-medium text-foreground mb-2">
                     No trending games yet
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     {friends.length === 0
                       ? "Add some friends to see what games they're playing and rating highly!"
                       : "Your friends haven't been very active lately. Check back soon to see what they're playing!"}

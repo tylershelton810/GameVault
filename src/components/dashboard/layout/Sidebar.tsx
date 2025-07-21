@@ -20,6 +20,7 @@ import {
   GamepadIcon,
   Menu,
 } from "lucide-react";
+import { useTheme } from "@/lib/theme";
 
 interface NavItem {
   icon: React.ReactNode;
@@ -65,6 +66,17 @@ const Sidebar = ({
   onOpenChange = () => {},
 }: SidebarProps) => {
   const navigate = useNavigate();
+  const { theme, currentTheme } = useTheme();
+
+  // Use theme colors consistently
+  const isElectricPlayground = theme === "electric-playground";
+  const sidebarBg = isElectricPlayground
+    ? "linear-gradient(135deg, #222831 0%, #393E46 100%)"
+    : `hsl(${currentTheme.colors.card})`;
+  const sidebarTextColor = `hsl(${currentTheme.colors.cardForeground})`;
+  const sidebarBorder = `hsl(${currentTheme.colors.border})`;
+  const accentColor = `hsl(${currentTheme.colors.accent})`;
+  const primaryColor = `hsl(${currentTheme.colors.primary})`;
 
   const handleItemClick = (label: string) => {
     onItemClick(label);
@@ -91,16 +103,36 @@ const Sidebar = ({
       case "Friends":
         navigate("/friends");
         break;
+      case "Settings":
+        navigate("/settings");
+        break;
       default:
         // For other items, just update the active state for now
         break;
     }
   };
   const SidebarContent = () => (
-    <div className="h-full bg-white/80 backdrop-blur-md border-r border-gray-200 flex flex-col">
+    <div
+      className="h-full backdrop-blur-md border-r flex flex-col"
+      style={{
+        background: sidebarBg,
+        borderColor: sidebarBorder,
+        color: sidebarTextColor,
+      }}
+    >
       <div className="p-6">
-        <h2 className="text-xl font-semibold mb-2 text-gray-900">GameVault</h2>
-        <p className="text-sm text-gray-500">Track your gaming journey</p>
+        <h2
+          className="text-xl font-bold mb-2 flex items-center gap-2"
+          style={{
+            color: accentColor,
+          }}
+        >
+          <span className="text-2xl">🎮</span>
+          GameVault
+        </h2>
+        <p className="text-sm opacity-80" style={{ color: sidebarTextColor }}>
+          Track your gaming journey
+        </p>
       </div>
 
       <ScrollArea className="flex-1 px-4">
@@ -109,11 +141,27 @@ const Sidebar = ({
             <Button
               key={item.label}
               variant={"ghost"}
-              className={`w-full justify-start gap-3 h-10 rounded-xl text-sm font-medium ${item.label === activeItem ? "bg-blue-50 text-blue-600 hover:bg-blue-100" : "text-gray-700 hover:bg-gray-100"}`}
+              className={`w-full justify-start gap-3 h-11 rounded-xl text-sm font-medium transition-all duration-200 ${item.label === activeItem ? "shadow-lg" : "hover:opacity-80"}`}
               onClick={() => handleItemClick(item.label)}
+              style={{
+                background:
+                  item.label === activeItem ? accentColor : "transparent",
+                color:
+                  item.label === activeItem
+                    ? `hsl(${currentTheme.colors.accentForeground})`
+                    : sidebarTextColor,
+                opacity: item.label === activeItem ? 1 : 0.85,
+                border: "1px solid transparent",
+              }}
             >
               <span
-                className={`${item.label === activeItem ? "text-blue-600" : "text-gray-500"}`}
+                style={{
+                  color:
+                    item.label === activeItem
+                      ? `hsl(${currentTheme.colors.accentForeground})`
+                      : sidebarTextColor,
+                  opacity: 1,
+                }}
               >
                 {item.icon}
               </span>
@@ -122,45 +170,72 @@ const Sidebar = ({
           ))}
         </div>
 
-        <Separator className="my-4 bg-gray-100" />
+        <Separator
+          className="my-6"
+          style={{
+            backgroundColor: `hsl(${currentTheme.colors.border})`,
+          }}
+        />
 
         <div className="space-y-3">
-          <h3 className="text-xs font-medium px-4 py-1 text-gray-500 uppercase tracking-wider">
+          <h3
+            className="text-xs font-semibold px-4 py-1 uppercase tracking-wider opacity-70"
+            style={{
+              color: accentColor,
+            }}
+          >
             Game Status
           </h3>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100"
+            className={`w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium ${isElectricPlayground ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
+            style={{ color: sidebarTextColor, opacity: 0.85 }}
           >
-            <span className="h-2 w-2 rounded-full bg-green-500"></span>
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-sm"></span>
             Playing
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100"
+            className={`w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium ${isElectricPlayground ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
+            style={{ color: sidebarTextColor, opacity: 0.85 }}
           >
-            <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+            <span
+              className="h-2.5 w-2.5 rounded-full shadow-sm"
+              style={{ backgroundColor: primaryColor }}
+            ></span>
             Played
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100"
+            className={`w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium ${isElectricPlayground ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
+            style={{ color: sidebarTextColor, opacity: 0.85 }}
           >
-            <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+            <span
+              className="h-2.5 w-2.5 rounded-full shadow-sm"
+              style={{ backgroundColor: accentColor }}
+            ></span>
             Want to Play
           </Button>
         </div>
       </ScrollArea>
 
-      <div className="p-4 mt-auto border-t border-gray-200">
+      <div
+        className="p-4 mt-auto border-t"
+        style={{
+          borderColor: `hsl(${currentTheme.colors.border})`,
+        }}
+      >
         {defaultBottomItems.map((item) => (
           <Button
             key={item.label}
             variant="ghost"
-            className="w-full justify-start gap-3 h-10 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 mb-1.5"
+            className="w-full justify-start gap-3 h-10 rounded-xl text-sm font-medium mb-1.5 transition-all duration-200 hover:opacity-80"
             onClick={() => handleItemClick(item.label)}
+            style={{ color: sidebarTextColor, opacity: 0.85 }}
           >
-            <span className="text-gray-500">{item.icon}</span>
+            <span style={{ color: sidebarTextColor, opacity: 0.8 }}>
+              {item.icon}
+            </span>
             {item.label}
           </Button>
         ))}

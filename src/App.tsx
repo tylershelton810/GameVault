@@ -13,9 +13,11 @@ import Discover from "./components/pages/Discover";
 import GamePage from "./components/pages/GamePage";
 import GameClubs from "./components/pages/GameClubs";
 import GameClubPage from "./components/GameClub/GameClubPage";
+import Settings from "./components/pages/Settings";
 import { AuthProvider, useAuth } from "../supabase/auth";
 import { Toaster } from "./components/ui/toaster";
 import { LoadingScreen, LoadingSpinner } from "./components/ui/loading-spinner";
+import { ThemeProvider } from "./lib/theme";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -103,6 +105,14 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <Settings />
+            </PrivateRoute>
+          }
+        />
       </Routes>
       {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
     </>
@@ -111,12 +121,16 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Suspense fallback={<LoadingScreen text="Loading application..." />}>
-        <AppRoutes />
-      </Suspense>
-      <Toaster />
-    </AuthProvider>
+    <ThemeProvider defaultTheme="electric-playground">
+      <div className="min-h-screen bg-background text-foreground">
+        <AuthProvider>
+          <Suspense fallback={<LoadingScreen text="Loading application..." />}>
+            <AppRoutes />
+          </Suspense>
+          <Toaster />
+        </AuthProvider>
+      </div>
+    </ThemeProvider>
   );
 }
 

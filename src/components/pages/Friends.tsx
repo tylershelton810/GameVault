@@ -501,7 +501,7 @@ const Friends = () => {
 
   if (isViewingFriend && selectedFriend) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <TopNavigation
           onMobileMenuClick={() => setIsSidebarOpen(true)}
           showMobileMenu={isMobile}
@@ -578,7 +578,9 @@ const Friends = () => {
               {isLoadingFriendGames ? (
                 <div className="flex justify-center items-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin" />
-                  <span className="ml-2 text-gray-600">Loading games...</span>
+                  <span className="ml-2 text-muted-foreground">
+                    Loading games...
+                  </span>
                 </div>
               ) : (
                 (() => {
@@ -681,7 +683,7 @@ const Friends = () => {
                             </h3>
                             <div className="space-y-2">
                               {/* Friend's rating */}
-                              <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                              <div className="bg-muted p-2 rounded-lg border border-border">
                                 <div className="flex items-center justify-between text-xs">
                                   <div className="flex items-center gap-2">
                                     <Avatar className="h-5 w-5">
@@ -692,17 +694,17 @@ const Friends = () => {
                                         }
                                         alt={selectedFriend.full_name}
                                       />
-                                      <AvatarFallback className="text-[8px]">
+                                      <AvatarFallback>
                                         {selectedFriend.full_name[0]}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span className="text-blue-700 font-medium">
+                                    <span className="text-primary font-medium">
                                       {selectedFriend.full_name}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1">
                                     {game.personalRating && (
-                                      <span className="text-blue-700 font-medium">
+                                      <span className="text-primary font-medium">
                                         {game.personalRating}/10
                                       </span>
                                     )}
@@ -710,7 +712,7 @@ const Friends = () => {
                                   </div>
                                 </div>
                               </div>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 Added{" "}
                                 {new Date(game.dateAdded).toLocaleDateString()}
                               </p>
@@ -722,12 +724,12 @@ const Friends = () => {
                   ) : (
                     <div className="text-center py-16">
                       <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      <h3 className="text-xl font-semibold text-foreground mb-2">
                         {friendGamesSearchTerm
                           ? "No games found"
                           : "No games yet"}
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-muted-foreground">
                         {friendGamesSearchTerm
                           ? `No games match "${friendGamesSearchTerm}"`
                           : `${selectedFriend.full_name} hasn't added any games to their library yet.`}
@@ -744,7 +746,7 @@ const Friends = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}
@@ -761,17 +763,17 @@ const Friends = () => {
           <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-3xl font-bold text-foreground mb-2">
                   Friends
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Connect with friends and discover new games together
                 </p>
               </div>
 
               <Dialog open={isAddFriendOpen} onOpenChange={setIsAddFriendOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Button>
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Friend
                   </Button>
@@ -816,10 +818,10 @@ const Friends = () => {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <p className="font-medium text-sm">
+                                  <p className="font-medium text-sm text-foreground">
                                     {user.full_name || "Unknown User"}
                                   </p>
-                                  <p className="text-xs text-gray-500">
+                                  <p className="text-xs text-muted-foreground">
                                     {user.email}
                                   </p>
                                 </div>
@@ -900,7 +902,7 @@ const Friends = () => {
                 {isLoadingFriends ? (
                   <div className="flex justify-center items-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin" />
-                    <span className="ml-2 text-gray-600">
+                    <span className="ml-2 text-muted-foreground">
                       Loading friends...
                     </span>
                   </div>
@@ -933,10 +935,10 @@ const Friends = () => {
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
-                                <CardTitle className="text-lg">
+                                <CardTitle className="text-lg text-foreground">
                                   {friend.full_name}
                                 </CardTitle>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                   {friend.email}
                                 </p>
                                 {friend.status === "pending" && (
@@ -950,16 +952,18 @@ const Friends = () => {
                           <CardContent>
                             <div className="space-y-3">
                               <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Games:</span>
-                                <span className="font-medium">
+                                <span className="text-muted-foreground">
+                                  Games:
+                                </span>
+                                <span className="font-medium text-foreground">
                                   {friend.gameCount}
                                 </span>
                               </div>
                               <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">
+                                <span className="text-muted-foreground">
                                   Avg Rating:
                                 </span>
-                                <span className="font-medium">
+                                <span className="font-medium text-foreground">
                                   {friend.averageRating > 0
                                     ? `${friend.averageRating.toFixed(1)}/10`
                                     : "N/A"}
@@ -993,10 +997,10 @@ const Friends = () => {
                 ) : (
                   <div className="text-center py-16">
                     <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
                       No friends yet
                     </h3>
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-muted-foreground mb-6">
                       Start building your gaming network by adding friends!
                     </p>
                     <Button onClick={() => setIsAddFriendOpen(true)}>
@@ -1032,10 +1036,10 @@ const Friends = () => {
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
-                                <CardTitle className="text-lg">
+                                <CardTitle className="text-lg text-foreground">
                                   {friend.full_name}
                                 </CardTitle>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                   {friend.email}
                                 </p>
                                 <Badge className="mt-1 bg-blue-100 text-blue-800">
@@ -1047,8 +1051,10 @@ const Friends = () => {
                           <CardContent>
                             <div className="space-y-3">
                               <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Games:</span>
-                                <span className="font-medium">
+                                <span className="text-muted-foreground">
+                                  Games:
+                                </span>
+                                <span className="font-medium text-foreground">
                                   {friend.gameCount}
                                 </span>
                               </div>
@@ -1075,11 +1081,10 @@ const Friends = () => {
                   </div>
                 ) : (
                   <div className="text-center py-16">
-                    <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
                       No friend requests
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-muted-foreground">
                       You don't have any pending friend requests.
                     </p>
                   </div>
@@ -1090,7 +1095,7 @@ const Friends = () => {
                 {isLoadingSharedGames ? (
                   <div className="flex justify-center items-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin" />
-                    <span className="ml-2 text-gray-600">
+                    <span className="ml-2 text-muted-foreground">
                       Loading shared games...
                     </span>
                   </div>
@@ -1204,7 +1209,7 @@ const Friends = () => {
                               </h3>
                               <div className="space-y-2">
                                 {/* Your rating */}
-                                <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                                <div className="bg-muted p-2 rounded-lg border border-border">
                                   <div className="flex items-center justify-between text-xs">
                                     <div className="flex items-center gap-2">
                                       <Avatar className="h-5 w-5">
@@ -1221,13 +1226,13 @@ const Friends = () => {
                                             "Y")[0].toUpperCase()}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <span className="text-blue-700 font-medium">
+                                      <span className="text-primary font-medium">
                                         You
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-1">
                                       {game.userRating && (
-                                        <span className="text-blue-700 font-medium">
+                                        <span className="text-primary font-medium">
                                           {game.userRating}/10
                                         </span>
                                       )}
@@ -1236,7 +1241,7 @@ const Friends = () => {
                                   </div>
                                 </div>
 
-                                <p className="text-xs text-gray-600 font-medium">
+                                <p className="text-xs text-muted-foreground font-medium">
                                   Shared with {game.friends.length} friend
                                   {game.friends.length > 1 ? "s" : ""}:
                                 </p>
@@ -1258,7 +1263,7 @@ const Friends = () => {
                                           {friend.name[0]}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <span className="text-gray-700">
+                                      <span className="text-foreground">
                                         {friend.name}
                                       </span>
                                       <div className="flex gap-1">
@@ -1272,7 +1277,7 @@ const Friends = () => {
                                     </div>
                                     <div className="flex items-center gap-1">
                                       {friend.rating && (
-                                        <span className="text-gray-600">
+                                        <span className="text-muted-foreground">
                                           {friend.rating}/10
                                         </span>
                                       )}
@@ -1288,10 +1293,10 @@ const Friends = () => {
                     ) : (
                       <div className="text-center py-16">
                         <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        <h3 className="text-xl font-semibold text-foreground mb-2">
                           No shared games
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-muted-foreground">
                           You don't have any games in common with your friends
                           yet.
                         </p>

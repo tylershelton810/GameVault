@@ -590,7 +590,7 @@ const GamePage = () => {
           activity_data: {
             game_title: gameDetails.name,
             rating: personalRating[0],
-            igdb_game_id: igdbGameId,
+            igdb_game_id: gameCollection.igdb_game_id,
           },
         });
       }
@@ -618,7 +618,7 @@ const GamePage = () => {
             activity_data: {
               game_title: gameDetails.name,
               rating: personalRating[0],
-              igdb_game_id: igdbGameId,
+              igdb_game_id: gameCollection.igdb_game_id,
             },
           });
 
@@ -684,14 +684,16 @@ const GamePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <TopNavigation />
         <div className="flex h-[calc(100vh-64px)] mt-16">
           <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
           <div className="flex-1 flex items-center justify-center">
             <div className="flex items-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin" />
-              <span className="text-lg text-gray-600">Loading game...</span>
+              <span className="text-lg text-muted-foreground">
+                Loading game...
+              </span>
             </div>
           </div>
         </div>
@@ -701,13 +703,15 @@ const GamePage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <TopNavigation />
         <div className="flex h-[calc(100vh-64px)] mt-16">
           <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{error}</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                {error}
+              </h2>
               <Button onClick={() => navigate(-1)} className="mt-4">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Go Back
@@ -720,7 +724,7 @@ const GamePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <TopNavigation />
       <div className="flex h-[calc(100vh-64px)] mt-16">
         <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
@@ -739,7 +743,7 @@ const GamePage = () => {
               </Button>
               <div className="flex items-center gap-3">
                 <Gamepad2 className="w-8 h-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-foreground">
                   {gameTitle || gameDetails?.name || "Loading..."}
                 </h1>
               </div>
@@ -793,7 +797,7 @@ const GamePage = () => {
                     {hasUserGame && gameCollection ? (
                       <>
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">
+                          <h3 className="text-lg font-semibold text-card-foreground">
                             Your Game Data
                           </h3>
                           <Dialog
@@ -970,14 +974,14 @@ const GamePage = () => {
                         {gameCollection.personal_rating &&
                           gameCollection.personal_rating > 0 && (
                             <div className="mb-4">
-                              <h4 className="text-sm font-medium text-gray-900 mb-2">
+                              <h4 className="text-sm font-medium text-card-foreground mb-2">
                                 Your Rating
                               </h4>
                               <div className="flex items-center gap-2">
                                 <div className="flex">
                                   {renderStars(gameCollection.personal_rating)}
                                 </div>
-                                <span className="text-sm font-medium text-gray-900">
+                                <span className="text-sm font-medium text-card-foreground">
                                   {gameCollection.personal_rating}/10
                                 </span>
                               </div>
@@ -986,10 +990,10 @@ const GamePage = () => {
 
                         {gameCollection.personal_notes && (
                           <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-900 mb-2">
+                            <h4 className="text-sm font-medium text-card-foreground mb-2">
                               Your Notes
                             </h4>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-muted-foreground">
                               {gameCollection.personal_notes}
                             </p>
                           </div>
@@ -997,37 +1001,37 @@ const GamePage = () => {
 
                         {existingReview && (
                           <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-900 mb-2">
+                            <h4 className="text-sm font-medium text-card-foreground mb-2">
                               Your Review
                             </h4>
                             <div className="bg-gray-50 rounded-lg p-3">
-                              <p className="text-sm text-gray-700">
+                              <p className="text-sm text-muted-foreground">
                                 {existingReview.review_text}
                               </p>
                             </div>
                           </div>
                         )}
 
-                        <div className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           Added{" "}
                           {new Date(
                             gameCollection.date_added,
                           ).toLocaleDateString()}
-                        </div>
+                        </p>
                       </>
                     ) : (
                       <>
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">
+                          <h3 className="text-lg font-semibold text-card-foreground">
                             Add to Your Collection
                           </h3>
                         </div>
                         <div className="text-center py-8">
                           <Gamepad2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <h4 className="text-lg font-medium text-gray-900 mb-2">
+                          <h4 className="text-lg font-medium text-card-foreground mb-2">
                             Game not in your collection
                           </h4>
-                          <p className="text-gray-600 mb-6">
+                          <p className="text-muted-foreground mb-6">
                             Add this game to your collection to track your
                             progress and rate it.
                           </p>
@@ -1184,7 +1188,7 @@ const GamePage = () => {
                     <CardContent className="p-6">
                       <div className="flex items-center justify-center py-8">
                         <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                        <span className="text-gray-600">
+                        <span className="text-muted-foreground">
                           Loading game details...
                         </span>
                       </div>
@@ -1199,22 +1203,20 @@ const GamePage = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {gameDetails.summary && (
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-2">
-                            Summary
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {gameDetails.summary}
-                          </p>
-                        </div>
-                      )}
+                      <div>
+                        <h4 className="font-medium text-card-foreground mb-2">
+                          Summary
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {gameDetails.summary}
+                        </p>
+                      </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {gameDetails.genres &&
                           gameDetails.genres.length > 0 && (
                             <div>
-                              <h4 className="font-medium text-gray-900 mb-2">
+                              <h4 className="font-medium text-card-foreground mb-2">
                                 Genres
                               </h4>
                               <div className="flex flex-wrap gap-1">
@@ -1234,7 +1236,7 @@ const GamePage = () => {
                         {gameDetails.platforms &&
                           gameDetails.platforms.length > 0 && (
                             <div>
-                              <h4 className="font-medium text-gray-900 mb-2">
+                              <h4 className="font-medium text-card-foreground mb-2">
                                 Platforms
                               </h4>
                               <div className="flex flex-wrap gap-1">
@@ -1293,7 +1295,7 @@ const GamePage = () => {
                               </Avatar>
                               <div className="flex-1">
                                 <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-medium text-gray-900">
+                                  <h4 className="font-medium text-card-foreground">
                                     {friend.full_name}
                                   </h4>
                                   <div className="flex items-center gap-2">
@@ -1312,7 +1314,7 @@ const GamePage = () => {
                                     <div className="flex">
                                       {renderStars(friend.personal_rating)}
                                     </div>
-                                    <span className="text-sm text-gray-600">
+                                    <span className="text-sm text-muted-foreground">
                                       {friend.personal_rating}/10
                                     </span>
                                   </div>
@@ -1321,10 +1323,10 @@ const GamePage = () => {
                                 {friend.review && (
                                   <div className="bg-gray-50 rounded-lg p-3 mb-2">
                                     <div className="flex items-center gap-2 mb-2"></div>
-                                    <p className="text-sm text-gray-700 mb-1">
+                                    <p className="text-sm text-muted-foreground mb-1">
                                       {friend.review.review_text}
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                       Reviewed{" "}
                                       {new Date(
                                         friend.review.created_at,
@@ -1334,13 +1336,13 @@ const GamePage = () => {
                                 )}
 
                                 {friend.personal_notes && (
-                                  <p className="text-sm text-gray-600 mb-2">
+                                  <p className="text-sm text-muted-foreground mb-2">
                                     <span className="font-medium">Notes:</span>{" "}
                                     {friend.personal_notes}
                                   </p>
                                 )}
 
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-muted-foreground">
                                   Added{" "}
                                   {new Date(
                                     friend.date_added,
@@ -1354,10 +1356,10 @@ const GamePage = () => {
                     ) : (
                       <div className="text-center py-8">
                         <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-card-foreground mb-2">
                           No friends have this game yet
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-muted-foreground">
                           Be the first among your friends to discover this game!
                         </p>
                       </div>

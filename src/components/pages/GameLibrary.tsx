@@ -906,7 +906,7 @@ const GameLibrary = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}
@@ -924,17 +924,17 @@ const GameLibrary = () => {
           <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-3xl font-bold text-foreground mb-2">
                   Game Library
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Manage your game collection and track your progress
                 </p>
               </div>
 
               <Dialog open={isAddGameOpen} onOpenChange={setIsAddGameOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Button>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Game
                   </Button>
@@ -1296,7 +1296,7 @@ const GameLibrary = () => {
                 {isLoadingGames && isInitialLoad ? (
                   <div className="flex justify-center items-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin" />
-                    <span className="ml-2 text-gray-600">
+                    <span className="ml-2 text-muted-foreground">
                       Loading your games...
                     </span>
                   </div>
@@ -1356,7 +1356,7 @@ const GameLibrary = () => {
                           </h3>
                           <div className="space-y-2">
                             {/* Your rating */}
-                            <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                            <div className="bg-muted p-2 rounded-lg border border-border">
                               <div className="flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-5 w-5">
@@ -1373,13 +1373,13 @@ const GameLibrary = () => {
                                         "Y")[0].toUpperCase()}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <span className="text-blue-700 font-medium">
+                                  <span className="text-primary font-medium">
                                     You
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   {game.personalRating && (
-                                    <span className="text-blue-700 font-medium">
+                                    <span className="text-primary font-medium">
                                       {game.personalRating}/10
                                     </span>
                                   )}
@@ -1392,7 +1392,7 @@ const GameLibrary = () => {
                             {game.friendsWithGame &&
                               game.friendsWithGame.length > 0 && (
                                 <>
-                                  <p className="text-xs text-gray-600 font-medium">
+                                  <p className="text-xs text-muted-foreground font-medium">
                                     Shared with {game.friendsWithGame.length}{" "}
                                     friend
                                     {game.friendsWithGame.length > 1 ? "s" : ""}
@@ -1416,7 +1416,7 @@ const GameLibrary = () => {
                                             {friend.name[0]}
                                           </AvatarFallback>
                                         </Avatar>
-                                        <span className="text-gray-700">
+                                        <span className="text-foreground">
                                           {friend.name}
                                         </span>
                                       </div>
@@ -1432,7 +1432,7 @@ const GameLibrary = () => {
                                           </div>
                                         )}
                                         {friend.rating && (
-                                          <span className="text-gray-600">
+                                          <span className="text-muted-foreground">
                                             {friend.rating}/10
                                           </span>
                                         )}
@@ -1451,19 +1451,16 @@ const GameLibrary = () => {
                   <div className="text-center py-16">
                     <div className="mb-6">
                       <div className="text-6xl mb-4">🎮</div>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      <h3 className="text-xl font-semibold text-foreground mb-2">
                         Your game library is looking a bit empty!
                       </h3>
-                      <p className="text-gray-600 mb-6">
+                      <p className="text-muted-foreground mb-6">
                         {activeTab === "all"
                           ? "Time to start building your epic game collection. What are you waiting for?"
                           : `No games in the &quot;${activeTab === "want-to-play" ? "Want to Play" : activeTab === "playing" ? "Playing" : "Played"}&quot; category yet.`}
                       </p>
                     </div>
-                    <Button
-                      onClick={() => setIsAddGameOpen(true)}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
+                    <Button onClick={() => setIsAddGameOpen(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Add your first game
                     </Button>

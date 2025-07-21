@@ -19,6 +19,7 @@ import { Bell, Home, Search, Settings, User, Camera, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../../supabase/auth";
 import { useRef, useState } from "react";
+import { useTheme } from "@/lib/theme";
 
 interface TopNavigationProps {
   onSearch?: (query: string) => void;
@@ -37,6 +38,7 @@ const TopNavigation = ({
   showMobileMenu = true,
 }: TopNavigationProps) => {
   const { user, signOut, updateProfilePicture } = useAuth();
+  const { currentTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUpdatingPicture, setIsUpdatingPicture] = useState(false);
 
@@ -80,7 +82,10 @@ const TopNavigation = ({
   if (!user) return null;
 
   return (
-    <div className="w-full h-16 border-b border-gray-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 fixed top-0 z-40 shadow-sm">
+    <div
+      className="w-full h-16 border-b bg-background/95 backdrop-blur-md flex items-center justify-between px-4 md:px-6 fixed top-0 z-40 shadow-sm"
+      style={{ borderColor: currentTheme.colors.border }}
+    >
       <div className="flex items-center gap-2 md:gap-4 flex-1">
         {showMobileMenu && (
           <Button
@@ -94,15 +99,19 @@ const TopNavigation = ({
         )}
         <Link
           to="/"
-          className="text-gray-900 hover:text-gray-700 transition-colors"
+          className="text-foreground hover:text-muted-foreground transition-colors"
         >
           <Home className="h-5 w-5" />
         </Link>
         <div className="relative w-full max-w-sm md:w-64">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search games..."
-            className="pl-9 h-10 rounded-full bg-gray-100 border-0 text-sm focus:ring-2 focus:ring-gray-200 focus-visible:ring-gray-200 focus-visible:ring-offset-0"
+            className="pl-9 h-10 rounded-full border-0 text-sm focus:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+            style={{
+              backgroundColor: `hsl(${currentTheme.colors.muted})`,
+              color: `hsl(${currentTheme.colors.foreground})`,
+            }}
             onChange={(e) => onSearch(e.target.value)}
           />
         </div>
@@ -117,11 +126,15 @@ const TopNavigation = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="relative rounded-full h-9 w-9 bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="relative rounded-full h-9 w-9 transition-colors"
+                    style={{
+                      backgroundColor: `hsl(${currentTheme.colors.muted})`,
+                      color: `hsl(${currentTheme.colors.mutedForeground})`,
+                    }}
                   >
-                    <Bell className="h-4 w-4 text-gray-700" />
+                    <Bell className="h-4 w-4" />
                     {notifications.length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-medium border border-white">
+                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-medium border border-background">
                         {notifications.length}
                       </span>
                     )}
@@ -129,16 +142,16 @@ const TopNavigation = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="rounded-xl overflow-hidden p-2 border border-gray-200 shadow-lg"
+                  className="rounded-xl overflow-hidden p-2 shadow-lg"
                 >
-                  <DropdownMenuLabel className="text-sm font-medium text-gray-900 px-2">
+                  <DropdownMenuLabel className="text-sm font-medium px-2">
                     Notifications
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="my-1 bg-gray-100" />
+                  <DropdownMenuSeparator className="my-1" />
                   {notifications.map((notification) => (
                     <DropdownMenuItem
                       key={notification.id}
-                      className="rounded-lg text-sm py-2 focus:bg-gray-100"
+                      className="rounded-lg text-sm py-2"
                     >
                       {notification.title}
                     </DropdownMenuItem>
@@ -146,7 +159,7 @@ const TopNavigation = ({
                 </DropdownMenuContent>
               </DropdownMenu>
             </TooltipTrigger>
-            <TooltipContent className="rounded-lg bg-gray-900 text-white text-xs px-3 py-1.5">
+            <TooltipContent className="rounded-lg text-xs px-3 py-1.5">
               <p>Notifications</p>
             </TooltipContent>
           </Tooltip>
@@ -168,7 +181,10 @@ const TopNavigation = ({
             align="end"
             className="rounded-xl border-none shadow-lg"
           >
-            <DropdownMenuLabel className="text-xs text-gray-500">
+            <DropdownMenuLabel
+              className="text-xs"
+              style={{ color: `hsl(${currentTheme.colors.mutedForeground})` }}
+            >
               {user.email}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
