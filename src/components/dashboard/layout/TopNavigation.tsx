@@ -15,32 +15,45 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Bell, Home, Search, Settings, User, Camera, Menu } from "lucide-react";
-import { Link } from "react-router-dom";
+import {
+  Bell,
+  Home,
+  Search,
+  Settings,
+  User,
+  Camera,
+  Menu,
+  UserPlus,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../supabase/auth";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useTheme } from "@/lib/theme";
+import { supabase } from "../../../../supabase/supabase";
+import { Tables } from "@/types/supabase";
+
+type Notification = Tables<"notifications"> & {
+  from_user: Tables<"users">;
+};
 
 interface TopNavigationProps {
   onSearch?: (query: string) => void;
-  notifications?: Array<{ id: string; title: string }>;
   onMobileMenuClick?: () => void;
   showMobileMenu?: boolean;
 }
 
 const TopNavigation = ({
   onSearch = () => {},
-  notifications = [
-    { id: "1", title: "New project assigned" },
-    { id: "2", title: "Meeting reminder" },
-  ],
   onMobileMenuClick = () => {},
   showMobileMenu = true,
 }: TopNavigationProps) => {
   const { user, signOut, updateProfilePicture } = useAuth();
   const { currentTheme } = useTheme();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUpdatingPicture, setIsUpdatingPicture] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
 
   const handleProfilePictureUpdate = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -77,6 +90,108 @@ const TopNavigation = ({
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+
+    setIsLoadingNotifications(true);
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select(
+          `
+          *,
+          from_user:users!notifications_from_user_id_fkey(*)
+        `,
+        )
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching notifications:", error);
+        return;
+      }
+
+      setNotifications(data || []);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }, [user]);
+
+  // Handle notification click
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      // Mark notification as read
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", notification.id);
+
+      // Navigate based on notification type
+      if (notification.notification_type === "friend_request") {
+        navigate("/friends", { state: { activeTab: "requests" } });
+      }
+
+      // Refresh notifications
+      fetchNotifications();
+    } catch (error) {
+      console.error("Error handling notification click:", error);
+    }
+  };
+
+  // Load notifications on mount and set up realtime subscription
+  useEffect(() => {
+    if (!user) return;
+
+    fetchNotifications();
+
+    // Set up realtime subscription for notifications
+    const channel = supabase
+      .channel("notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchNotifications();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchNotifications]);
+
+  const getNotificationTitle = (notification: Notification) => {
+    switch (notification.notification_type) {
+      case "friend_request":
+        return `${notification.from_user?.full_name || "Someone"} sent you a friend request`;
+      case "like":
+        return `${notification.from_user?.full_name || "Someone"} liked your activity`;
+      case "comment":
+        return `${notification.from_user?.full_name || "Someone"} commented on your activity`;
+      default:
+        return "New notification";
+    }
+  };
+
+  const getNotificationIcon = (notification: Notification) => {
+    switch (notification.notification_type) {
+      case "friend_request":
+        return <UserPlus className="h-4 w-4 text-blue-500" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
   };
 
   if (!user) return null;
@@ -148,14 +263,39 @@ const TopNavigation = ({
                     Notifications
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="my-1" />
-                  {notifications.map((notification) => (
-                    <DropdownMenuItem
-                      key={notification.id}
-                      className="rounded-lg text-sm py-2"
-                    >
-                      {notification.title}
+                  {isLoadingNotifications ? (
+                    <DropdownMenuItem className="rounded-lg text-sm py-2 text-muted-foreground">
+                      Loading...
                     </DropdownMenuItem>
-                  ))}
+                  ) : notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <DropdownMenuItem
+                        key={notification.id}
+                        className="rounded-lg text-sm py-2 cursor-pointer hover:bg-accent"
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="flex-shrink-0">
+                            {getNotificationIcon(notification)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {getNotificationTitle(notification)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(
+                                notification.created_at,
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <DropdownMenuItem className="rounded-lg text-sm py-2 text-muted-foreground">
+                      No new notifications
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </TooltipTrigger>

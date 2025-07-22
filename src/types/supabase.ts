@@ -502,6 +502,68 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          activity_id: string | null
+          created_at: string
+          from_user_id: string
+          id: string
+          interaction_id: string | null
+          is_read: boolean | null
+          notification_type: string
+          user_id: string
+        }
+        Insert: {
+          activity_id?: string | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          interaction_id?: string | null
+          is_read?: boolean | null
+          notification_type: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          interaction_id?: string | null
+          is_read?: boolean | null
+          notification_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "activity_interactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null
@@ -511,6 +573,7 @@ export type Database = {
           id: string
           image: string | null
           name: string | null
+          notification_preferences: Json | null
           token_identifier: string
           updated_at: string | null
           user_id: string | null
@@ -523,6 +586,7 @@ export type Database = {
           id: string
           image?: string | null
           name?: string | null
+          notification_preferences?: Json | null
           token_identifier: string
           updated_at?: string | null
           user_id?: string | null
@@ -535,6 +599,7 @@ export type Database = {
           id?: string
           image?: string | null
           name?: string | null
+          notification_preferences?: Json | null
           token_identifier?: string
           updated_at?: string | null
           user_id?: string | null

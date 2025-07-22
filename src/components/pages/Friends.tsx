@@ -41,7 +41,7 @@ import TopNavigation from "@/components/dashboard/layout/TopNavigation";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
 import { Tables } from "@/types/supabase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 type User = Tables<"users">;
 type GameCollection = Tables<"game_collections">;
@@ -91,6 +91,7 @@ interface SharedGame {
 const Friends = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("friends");
   const [searchTerm, setSearchTerm] = useState("");
   const [friendSearchTerm, setFriendSearchTerm] = useState("");
@@ -429,10 +430,17 @@ const Friends = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Load friends on component mount
+  // Load friends on component mount and handle navigation state
   useEffect(() => {
     fetchFriends();
-  }, [fetchFriends]);
+
+    // Check if we should navigate to a specific tab (from notification click)
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear the state to prevent it from persisting
+      window.history.replaceState({}, document.title);
+    }
+  }, [fetchFriends, location.state]);
 
   // Load shared games when friends change
   useEffect(() => {

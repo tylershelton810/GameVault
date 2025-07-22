@@ -14,6 +14,10 @@ type AuthContextType = {
   ) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfilePicture: (file: File) => Promise<string>;
+  updateNotificationPreferences: (
+    preferences: Record<string, boolean>,
+  ) => Promise<void>;
+  getNotificationPreferences: () => Promise<Record<string, boolean>>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -140,9 +144,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
+  const updateNotificationPreferences = async (
+    preferences: Record<string, boolean>,
+  ) => {
+    if (!user) throw new Error("No user logged in");
+
+    const { error } = await supabase
+      .from("users")
+      .update({ notification_preferences: preferences })
+      .eq("id", user.id);
+
+    if (error) throw error;
+  };
+
+  const getNotificationPreferences = async (): Promise<
+    Record<string, boolean>
+  > => {
+    if (!user) throw new Error("No user logged in");
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("notification_preferences")
+      .eq("id", user.id)
+      .single();
+
+    if (error) throw error;
+
+    return data?.notification_preferences || { friend_requests: true };
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, signIn, signUp, signOut, updateProfilePicture }}
+      value={{
+        user,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        updateProfilePicture,
+        updateNotificationPreferences,
+        getNotificationPreferences,
+      }}
     >
       {children}
     </AuthContext.Provider>
