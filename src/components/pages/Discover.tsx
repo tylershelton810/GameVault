@@ -347,35 +347,78 @@ const Discover = () => {
                         key={game.igdb_game_id}
                         className="flex-shrink-0 w-48 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                         onClick={async () => {
+                          console.log("Discover onClick - game:", game);
+                          console.log("Discover onClick - user:", user);
+
                           // Check if user has this game in their library
                           if (game.userStatus !== "not-in-library") {
                             // Find the user's game collection ID for this IGDB game
-                            const { data: userGameCollection } = await supabase
+                            const {
+                              data: userGameCollection,
+                              error: userError,
+                            } = await supabase
                               .from("game_collections")
                               .select("id")
                               .eq("user_id", user?.id)
                               .eq("igdb_game_id", game.igdb_game_id)
                               .single();
 
-                            if (userGameCollection) {
-                              navigate(`/game/${userGameCollection.id}`);
-                            }
-                          } else {
-                            // User doesn't have this game, find a friend's game collection ID
-                            const friendWithGame = game.friends[0];
-                            if (friendWithGame) {
-                              const { data: friendGameCollection } =
-                                await supabase
-                                  .from("game_collections")
-                                  .select("id")
-                                  .eq("user_id", friendWithGame.id)
-                                  .eq("igdb_game_id", game.igdb_game_id)
-                                  .single();
+                            console.log(
+                              "User game collection:",
+                              userGameCollection,
+                              "Error:",
+                              userError,
+                            );
 
-                              if (friendGameCollection) {
-                                navigate(`/game/${friendGameCollection.id}`);
-                              }
+                            if (userGameCollection) {
+                              console.log(
+                                "Navigating to user game:",
+                                userGameCollection.id,
+                              );
+                              navigate(`/game/${userGameCollection.id}`);
+                              return;
                             }
+                          }
+
+                          // User doesn't have this game, find any friend's game collection ID for this specific game
+                          let foundGameCollection = null;
+
+                          for (const friend of game.friends) {
+                            const {
+                              data: friendGameCollection,
+                              error: friendError,
+                            } = await supabase
+                              .from("game_collections")
+                              .select("id")
+                              .eq("user_id", friend.id)
+                              .eq("igdb_game_id", game.igdb_game_id)
+                              .single();
+
+                            console.log(
+                              `Friend ${friend.name} game collection:`,
+                              friendGameCollection,
+                              "Error:",
+                              friendError,
+                            );
+
+                            if (friendGameCollection) {
+                              foundGameCollection = friendGameCollection;
+                              break;
+                            }
+                          }
+
+                          if (foundGameCollection) {
+                            console.log(
+                              "Navigating to friend game:",
+                              foundGameCollection.id,
+                            );
+                            navigate(`/game/${foundGameCollection.id}`);
+                          } else {
+                            console.log(
+                              "No game collection found, navigating with IGDB ID:",
+                              game.igdb_game_id,
+                            );
+                            navigate(`/game/${game.igdb_game_id}`);
                           }
                         }}
                       >

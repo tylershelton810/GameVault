@@ -105,6 +105,7 @@ interface FriendGameData {
 
 const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
+  console.log("gameID", gameId);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeItem, setActiveItem] = useState("");
@@ -178,27 +179,20 @@ const GamePage = () => {
         }
       } else {
         // Game not in user's collection, check if it's an IGDB ID or find by IGDB ID
-        const igdbId = parseInt(gameId);
-        if (!isNaN(igdbId)) {
-          // It's a direct IGDB game ID
-          setHasUserGame(false);
-          setIgdbGameId(igdbId);
-        } else {
-          // Try to find the game by collection ID in other users' collections to get IGDB ID
-          const { data: otherUserGame } = await supabase
-            .from("game_collections")
-            .select("igdb_game_id, game_title")
-            .eq("id", gameId)
-            .single();
+        // Try to find the game by collection ID in other users' collections to get IGDB ID
+        const { data: otherUserGame } = await supabase
+          .from("game_collections")
+          .select("igdb_game_id, game_title")
+          .eq("id", gameId)
+          .single();
 
-          if (otherUserGame) {
-            setHasUserGame(false);
-            setIgdbGameId(otherUserGame.igdb_game_id);
-            setGameTitle(otherUserGame.game_title);
-          } else {
-            setError("Game not found");
-            return;
-          }
+        if (otherUserGame) {
+          setHasUserGame(false);
+          setIgdbGameId(otherUserGame.igdb_game_id);
+          setGameTitle(otherUserGame.game_title);
+        } else {
+          setError("Game not found");
+          return;
         }
       }
     } catch (error) {

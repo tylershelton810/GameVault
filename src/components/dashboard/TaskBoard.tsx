@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Heart, MessageCircle, Send } from "lucide-react";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
+import { useTheme } from "@/lib/theme";
 
 interface Activity {
   id: string;
@@ -92,7 +93,7 @@ const CommentsSection = ({
   }
 
   return (
-    <div className="mt-3 border-t border-gray-100 pt-3">
+    <div className="mt-3 border-t border-border pt-3">
       {/* Comments List */}
       {isCommentsVisible && (
         <div className="mb-3">
@@ -105,22 +106,24 @@ const CommentsSection = ({
                     alt={comment.user.name}
                     className="w-6 h-6 rounded-full flex-shrink-0 mt-0.5"
                   />
-                  <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-xs text-gray-900">
+                      <span className="font-medium text-xs text-card-foreground">
                         {comment.user.name}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {comment.timestamp}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-700">{comment.text}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {comment.text}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 text-center py-2">
+            <p className="text-sm text-muted-foreground text-center py-2">
               No comments yet. Be the first to comment!
             </p>
           )}
@@ -151,10 +154,10 @@ const CommentsSection = ({
               onClick={handleSubmitComment}
               disabled={!currentCommentText.trim() || isSubmitting}
               size="sm"
-              className="h-9 px-3"
+              className="h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
               )}
@@ -178,8 +181,11 @@ const SocialTimeline = ({
   isLoading: propIsLoading = false,
 }: SocialTimelineProps) => {
   const { user } = useAuth();
+  const { currentTheme } = useTheme();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [friends, setFriends] = useState<string[]>([]);
   const [likingActivity, setLikingActivity] = useState<string | null>(null);
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
@@ -190,6 +196,8 @@ const SocialTimeline = ({
   const [showCommentInput, setShowCommentInput] = useState<
     Record<string, boolean>
   >({});
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch user's friends
   const fetchFriends = useCallback(async () => {
@@ -227,25 +235,35 @@ const SocialTimeline = ({
     }
   }, [user]);
 
-  // Fetch activities from friends and self
-  const fetchActivities = useCallback(async () => {
-    if (!user) return;
+  // Fetch activities from friends and self with pagination
+  const fetchActivities = useCallback(
+    async (offset = 0, isLoadMore = false) => {
+      if (!user) return;
 
-    setLoading(true);
-    try {
-      const userIds = await fetchFriends();
-      setFriends(userIds);
-
-      if (userIds.length === 0) {
-        setActivities([]);
-        setLoading(false);
-        return;
+      if (!isLoadMore) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
       }
 
-      const { data: activitiesData, error } = await supabase
-        .from("activity_feed")
-        .select(
-          `
+      try {
+        const userIds = await fetchFriends();
+        if (!isLoadMore) {
+          setFriends(userIds);
+        }
+
+        if (userIds.length === 0) {
+          if (!isLoadMore) {
+            setActivities([]);
+          }
+          setHasMore(false);
+          return;
+        }
+
+        const { data: activitiesData, error } = await supabase
+          .from("activity_feed")
+          .select(
+            `
           *,
           user:users!activity_feed_user_id_fkey(
             id,
@@ -262,26 +280,27 @@ const SocialTimeline = ({
             rating
           )
         `,
-        )
-        .in("user_id", userIds)
-        .order("created_at", { ascending: false })
-        .limit(50);
+          )
+          .in("user_id", userIds)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + ITEMS_PER_PAGE - 1);
 
-      // Fetch likes and comments for each activity
-      const activityIds = activitiesData?.map((activity) => activity.id) || [];
+        // Fetch likes and comments for each activity
+        const activityIds =
+          activitiesData?.map((activity) => activity.id) || [];
 
-      const [likesData, commentsData] = await Promise.all([
-        // Fetch likes count and user's like status
-        supabase
-          .from("activity_interactions")
-          .select("activity_id, user_id")
-          .in("activity_id", activityIds)
-          .eq("interaction_type", "like"),
-        // Fetch comments
-        supabase
-          .from("activity_interactions")
-          .select(
-            `
+        const [likesData, commentsData] = await Promise.all([
+          // Fetch likes count and user's like status
+          supabase
+            .from("activity_interactions")
+            .select("activity_id, user_id")
+            .in("activity_id", activityIds)
+            .eq("interaction_type", "like"),
+          // Fetch comments
+          supabase
+            .from("activity_interactions")
+            .select(
+              `
             *,
             user:users!activity_interactions_user_id_fkey(
               id,
@@ -289,134 +308,158 @@ const SocialTimeline = ({
               avatar_url
             )
           `,
-          )
-          .in("activity_id", activityIds)
-          .eq("interaction_type", "comment")
-          .order("created_at", { ascending: true }),
-      ]);
+            )
+            .in("activity_id", activityIds)
+            .eq("interaction_type", "comment")
+            .order("created_at", { ascending: true }),
+        ]);
 
-      const likesMap = new Map<string, { count: number; userLiked: boolean }>();
-      const commentsMap = new Map<string, Comment[]>();
+        const likesMap = new Map<
+          string,
+          { count: number; userLiked: boolean }
+        >();
+        const commentsMap = new Map<string, Comment[]>();
 
-      // Process likes
-      if (likesData.data) {
-        likesData.data.forEach((like) => {
-          const current = likesMap.get(like.activity_id) || {
-            count: 0,
-            userLiked: false,
-          };
-          current.count++;
-          if (like.user_id === user.id) {
-            current.userLiked = true;
-          }
-          likesMap.set(like.activity_id, current);
-        });
-      }
-
-      // Process comments
-      if (commentsData.data) {
-        commentsData.data.forEach((comment) => {
-          const activityComments = commentsMap.get(comment.activity_id) || [];
-          activityComments.push({
-            id: comment.id,
-            user: {
-              id: comment.user?.id || "",
-              name: comment.user?.full_name || "Unknown User",
-              avatar:
-                comment.user?.avatar_url ||
-                `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user?.full_name || "user"}`,
-            },
-            text: comment.comment_text || "",
-            timestamp: formatTimestamp(comment.created_at),
+        // Process likes
+        if (likesData.data) {
+          likesData.data.forEach((like) => {
+            const current = likesMap.get(like.activity_id) || {
+              count: 0,
+              userLiked: false,
+            };
+            current.count++;
+            if (like.user_id === user.id) {
+              current.userLiked = true;
+            }
+            likesMap.set(like.activity_id, current);
           });
-          commentsMap.set(comment.activity_id, activityComments);
-        });
-      }
+        }
 
-      if (error) {
-        console.error("Error fetching activities:", error);
-        setActivities([]);
-        return;
-      }
+        // Process comments
+        if (commentsData.data) {
+          commentsData.data.forEach((comment) => {
+            const activityComments = commentsMap.get(comment.activity_id) || [];
+            activityComments.push({
+              id: comment.id,
+              user: {
+                id: comment.user?.id || "",
+                name: comment.user?.full_name || "Unknown User",
+                avatar:
+                  comment.user?.avatar_url ||
+                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user?.full_name || "user"}`,
+              },
+              text: comment.comment_text || "",
+              timestamp: formatTimestamp(comment.created_at),
+            });
+            commentsMap.set(comment.activity_id, activityComments);
+          });
+        }
 
-      // Transform the data to match our Activity interface
-      const transformedActivities: Activity[] =
-        activitiesData?.map((activity) => {
-          const activityData = activity.activity_data || {};
-          let title = "";
-          let description = "";
-          let game = "";
-          let rating: number | undefined;
-
-          switch (activity.activity_type) {
-            case "game_added":
-              title = `Added ${activityData.game_title || "a game"} to their library`;
-              description = `Status: ${activityData.status || "Unknown"}`;
-              game = activityData.game_title || "";
-              break;
-            case "game_completed":
-              title = `Completed ${activityData.game_title || "a game"}`;
-              description = "Finished playing this game";
-              game = activityData.game_title || "";
-              break;
-            case "game_rated":
-              title = `Rated ${activityData.game_title || "a game"}`;
-              description = `Gave it a ${activityData.rating || "N/A"}/10 rating`;
-              game = activityData.game_title || "";
-              rating = activityData.rating;
-              break;
-            case "review_posted":
-              title = `Wrote a review for ${activityData.game_title || "a game"}`;
-              description =
-                activity.game_review?.review_text || "Posted a review";
-              game = activityData.game_title || "";
-              rating = activity.game_review?.rating;
-              break;
-            default:
-              title = "Unknown activity";
-              description = "";
+        if (error) {
+          console.error("Error fetching activities:", error);
+          if (!isLoadMore) {
+            setActivities([]);
           }
+          setHasMore(false);
+          return;
+        }
 
-          const likeInfo = likesMap.get(activity.id) || {
-            count: 0,
-            userLiked: false,
-          };
-          const comments = commentsMap.get(activity.id) || [];
+        // Check if we have more data
+        const hasMoreData =
+          activitiesData && activitiesData.length === ITEMS_PER_PAGE;
+        setHasMore(hasMoreData || false);
 
-          return {
-            id: activity.id,
-            type: activity.activity_type as Activity["type"],
-            title,
-            description,
-            user: {
-              id: activity.user?.id || "",
-              name: activity.user?.full_name || "Unknown User",
-              avatar:
-                activity.user?.avatar_url ||
-                `https://api.dicebear.com/7.x/avataaars/svg?seed=${activity.user?.full_name || "user"}`,
-            },
-            timestamp: formatTimestamp(activity.created_at),
-            game,
-            rating,
-            activity_data: activityData,
-            likes_count: likeInfo.count,
-            comments_count: comments.length,
-            user_has_liked: likeInfo.userLiked,
-            comments,
-            game_cover_url:
-              activity.game_collection?.game_cover_url ||
-              activityData.game_cover_url,
-          };
-        }) || [];
+        // Transform the data to match our Activity interface
+        const transformedActivities: Activity[] =
+          activitiesData?.map((activity) => {
+            const activityData = activity.activity_data || {};
+            let title = "";
+            let description = "";
+            let game = "";
+            let rating: number | undefined;
 
-      setActivities(transformedActivities);
-    } catch (error) {
-      console.error("Error fetching activities:", error);
-      setActivities([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, fetchFriends]);
+            switch (activity.activity_type) {
+              case "game_added":
+                title = `Added ${activityData.game_title || "a game"} to their library`;
+                description = `Status: ${activityData.status || "Unknown"}`;
+                game = activityData.game_title || "";
+                break;
+              case "game_completed":
+                title = `Completed ${activityData.game_title || "a game"}`;
+                description = "Finished playing this game";
+                game = activityData.game_title || "";
+                break;
+              case "game_rated":
+                title = `Rated ${activityData.game_title || "a game"}`;
+                description = `Gave it a ${activityData.rating || "N/A"}/10 rating`;
+                game = activityData.game_title || "";
+                rating = activityData.rating;
+                break;
+              case "review_posted":
+                title = `Wrote a review for ${activityData.game_title || "a game"}`;
+                description =
+                  activity.game_review?.review_text || "Posted a review";
+                game = activityData.game_title || "";
+                rating = activity.game_review?.rating;
+                break;
+              default:
+                title = "Unknown activity";
+                description = "";
+            }
+
+            const likeInfo = likesMap.get(activity.id) || {
+              count: 0,
+              userLiked: false,
+            };
+            const comments = commentsMap.get(activity.id) || [];
+
+            return {
+              id: activity.id,
+              type: activity.activity_type as Activity["type"],
+              title,
+              description,
+              user: {
+                id: activity.user?.id || "",
+                name: activity.user?.full_name || "Unknown User",
+                avatar:
+                  activity.user?.avatar_url ||
+                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${activity.user?.full_name || "user"}`,
+              },
+              timestamp: formatTimestamp(activity.created_at),
+              game,
+              rating,
+              activity_data: activityData,
+              likes_count: likeInfo.count,
+              comments_count: comments.length,
+              user_has_liked: likeInfo.userLiked,
+              comments,
+              game_cover_url:
+                activity.game_collection?.game_cover_url ||
+                activityData.game_cover_url,
+            };
+          }) || [];
+
+        if (isLoadMore) {
+          setActivities((prev) => [...prev, ...transformedActivities]);
+        } else {
+          setActivities(transformedActivities);
+        }
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+        if (!isLoadMore) {
+          setActivities([]);
+        }
+        setHasMore(false);
+      } finally {
+        if (isLoadMore) {
+          setLoadingMore(false);
+        } else {
+          setLoading(false);
+        }
+      }
+    },
+    [user, fetchFriends],
+  );
 
   // Format timestamp to relative time
   const formatTimestamp = (timestamp: string) => {
@@ -603,6 +646,26 @@ const SocialTimeline = ({
     setCommentTexts((prev) => ({ ...prev, [activityId]: text }));
   };
 
+  // Load more activities when scrolling to bottom
+  const loadMoreActivities = useCallback(() => {
+    if (!loadingMore && hasMore && activities.length > 0) {
+      fetchActivities(activities.length, true);
+    }
+  }, [fetchActivities, loadingMore, hasMore, activities.length]);
+
+  // Handle scroll to detect when user reaches bottom
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+      const isNearBottom = scrollHeight - scrollTop <= clientHeight + 100;
+
+      if (isNearBottom && hasMore && !loadingMore) {
+        loadMoreActivities();
+      }
+    },
+    [hasMore, loadingMore, loadMoreActivities],
+  );
+
   useEffect(() => {
     if (user) {
       fetchActivities();
@@ -644,12 +707,12 @@ const SocialTimeline = ({
 
   if (isLoading) {
     return (
-      <div className="w-full h-full bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="w-full h-full bg-card/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-border">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-card-foreground">
             Social Timeline
           </h2>
-          <Button className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 h-9 shadow-sm transition-colors opacity-50 cursor-not-allowed">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-4 h-9 shadow-sm transition-colors opacity-50 cursor-not-allowed">
             <PlusCircle className="mr-2 h-4 w-4" />
             Share Activity
           </Button>
@@ -657,12 +720,12 @@ const SocialTimeline = ({
 
         <div className="flex flex-col items-center justify-center min-h-[400px]">
           <div className="relative">
-            <div className="h-12 w-12 rounded-full border-4 border-gray-100 border-t-blue-500 animate-spin" />
+            <div className="h-12 w-12 rounded-full border-4 border-muted border-t-primary animate-spin" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="h-4 w-4 rounded-full bg-blue-500/20 animate-pulse" />
+              <div className="h-4 w-4 rounded-full bg-primary/20 animate-pulse" />
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-500 mt-4">
+          <p className="text-sm font-medium text-muted-foreground mt-4">
             Loading social timeline...
           </p>
         </div>
@@ -671,18 +734,22 @@ const SocialTimeline = ({
   }
 
   return (
-    <div className="w-full h-full bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-gray-100">
+    <div className="w-full h-full bg-card/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-border">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">
+        <h2 className="text-2xl font-semibold text-card-foreground">
           Social Timeline
         </h2>
-        <Button className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 h-9 shadow-sm transition-colors">
+        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-4 h-9 shadow-sm transition-colors">
           <PlusCircle className="mr-2 h-4 w-4" />
           Share Activity
         </Button>
       </div>
 
-      <div className="space-y-4 max-h-[400px] md:max-h-[500px] overflow-y-auto">
+      <div
+        className="space-y-4 max-h-[400px] md:max-h-[500px] overflow-y-auto"
+        onScroll={handleScroll}
+        ref={scrollAreaRef}
+      >
         {displayActivities.length > 0 ? (
           displayActivities.map((activity) => (
             <motion.div
@@ -691,7 +758,7 @@ const SocialTimeline = ({
               onClick={() => onActivityClick(activity)}
             >
               <Card
-                className={`p-4 cursor-pointer hover:shadow-md transition-all duration-200 rounded-xl border ${getActivityColor(activity.type)} bg-white shadow-sm`}
+                className={`p-4 cursor-pointer hover:shadow-md transition-all duration-200 rounded-xl border border-border bg-card shadow-sm`}
               >
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0">
@@ -706,17 +773,17 @@ const SocialTimeline = ({
                       <span className="text-lg">
                         {getActivityIcon(activity.type)}
                       </span>
-                      <h4 className="font-medium text-gray-900 text-sm">
+                      <h4 className="font-medium text-card-foreground text-sm">
                         {activity.user.name}
                       </h4>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {activity.timestamp}
                       </span>
                     </div>
-                    <h3 className="font-medium text-gray-900 mb-1">
+                    <h3 className="font-medium text-card-foreground mb-1">
                       {activity.title}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {activity.description}
                     </p>
                     <div className="flex items-center gap-4 mt-2">
@@ -725,8 +792,8 @@ const SocialTimeline = ({
                         size="sm"
                         className={`h-8 px-2 transition-colors ${
                           activity.user_has_liked
-                            ? "text-red-500 hover:text-red-600"
-                            : "text-gray-500 hover:text-red-500"
+                            ? "text-destructive hover:text-destructive/80"
+                            : "text-muted-foreground hover:text-destructive"
                         } ${likingActivity === activity.id ? "opacity-50 cursor-not-allowed" : ""}`}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -737,7 +804,7 @@ const SocialTimeline = ({
                         <Heart
                           className={`w-4 h-4 mr-1 transition-all ${
                             activity.user_has_liked
-                              ? "fill-red-500 text-red-500 scale-110"
+                              ? "fill-destructive text-destructive scale-110"
                               : ""
                           } ${likingActivity === activity.id ? "animate-pulse" : ""}`}
                         />
@@ -751,8 +818,8 @@ const SocialTimeline = ({
                         size="sm"
                         className={`h-8 px-2 transition-colors ${
                           showComments[activity.id]
-                            ? "text-blue-500 hover:text-blue-600"
-                            : "text-gray-500 hover:text-blue-500"
+                            ? "text-primary hover:text-primary/80"
+                            : "text-muted-foreground hover:text-primary"
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -767,13 +834,12 @@ const SocialTimeline = ({
                     </div>
                   </div>
 
-                  {/* Game Cover Image */}
                   {activity.game_cover_url && (
                     <div className="flex-shrink-0">
                       <img
                         src={activity.game_cover_url}
                         alt={activity.game || "Game cover"}
-                        className="w-16 h-20 rounded-lg object-cover border border-gray-200 shadow-sm"
+                        className="w-16 h-20 rounded-lg object-cover border border-border shadow-sm"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = "none";
@@ -800,13 +866,34 @@ const SocialTimeline = ({
         ) : (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎮</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-card-foreground mb-2">
               No activities yet
             </h3>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               {friends.length === 0
                 ? "Add some friends to see their gaming activities!"
                 : "Your friends haven't shared any gaming activities yet."}
+            </p>
+          </div>
+        )}
+
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="flex justify-center py-4">
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 rounded-full border-2 border-muted border-t-primary animate-spin" />
+              <span className="text-sm text-muted-foreground">
+                Loading more activities...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* End of timeline indicator */}
+        {!hasMore && activities.length > 0 && (
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground">
+              You've reached the end of the timeline
             </p>
           </div>
         )}
