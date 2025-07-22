@@ -821,7 +821,7 @@ const Friends = () => {
                                   <p className="font-medium text-sm text-foreground truncate">
                                     {user.full_name || "Unknown User"}
                                   </p>
-                                  <p className="text-xs text-muted-foreground truncate">
+                                  <p className="text-xs text-muted-foreground truncate min-w-0">
                                     {user.email}
                                   </p>
                                 </div>
@@ -938,7 +938,7 @@ const Friends = () => {
                                 <CardTitle className="text-lg text-foreground truncate">
                                   {friend.full_name}
                                 </CardTitle>
-                                <p className="text-sm text-muted-foreground truncate">
+                                <p className="text-sm text-muted-foreground truncate min-w-0">
                                   {friend.email}
                                 </p>
                                 {friend.status === "pending" && (
@@ -1039,7 +1039,7 @@ const Friends = () => {
                                 <CardTitle className="text-lg text-foreground truncate">
                                   {friend.full_name}
                                 </CardTitle>
-                                <p className="text-sm text-muted-foreground truncate">
+                                <p className="text-sm text-muted-foreground truncate min-w-0">
                                   {friend.email}
                                 </p>
                                 <Badge className="mt-1 bg-blue-100 text-blue-800">
