@@ -817,11 +817,11 @@ const Friends = () => {
                                       "U")[0].toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
-                                <div>
-                                  <p className="font-medium text-sm text-foreground">
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium text-sm text-foreground truncate">
                                     {user.full_name || "Unknown User"}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground truncate">
                                     {user.email}
                                   </p>
                                 </div>
@@ -934,11 +934,11 @@ const Friends = () => {
                                   {friend.full_name[0]}
                                 </AvatarFallback>
                               </Avatar>
-                              <div className="flex-1">
-                                <CardTitle className="text-lg text-foreground">
+                              <div className="flex-1 min-w-0">
+                                <CardTitle className="text-lg text-foreground truncate">
                                   {friend.full_name}
                                 </CardTitle>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm text-muted-foreground truncate">
                                   {friend.email}
                                 </p>
                                 {friend.status === "pending" && (
@@ -1035,11 +1035,11 @@ const Friends = () => {
                                   {friend.full_name[0]}
                                 </AvatarFallback>
                               </Avatar>
-                              <div className="flex-1">
-                                <CardTitle className="text-lg text-foreground">
+                              <div className="flex-1 min-w-0">
+                                <CardTitle className="text-lg text-foreground truncate">
                                   {friend.full_name}
                                 </CardTitle>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm text-muted-foreground truncate">
                                   {friend.email}
                                 </p>
                                 <Badge className="mt-1 bg-blue-100 text-blue-800">
