@@ -811,7 +811,47 @@ const SocialTimeline = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.3 }}
-                onClick={() => onActivityClick(activity)}
+                onClick={() => {
+                  try {
+                    console.log(
+                      "Card clicked, activity data:",
+                      activity.activity_data,
+                    );
+
+                    const igdbGameId = activity.activity_data?.igdb_game_id;
+                    const gameId = activity.activity_data?.game_id;
+                    const gameTitle =
+                      activity.activity_data?.game_title || activity.game;
+
+                    console.log("Available IDs:", {
+                      igdbGameId,
+                      gameId,
+                      gameTitle,
+                    });
+
+                    if (igdbGameId) {
+                      console.log("Navigating to IGDB game:", igdbGameId);
+                      navigate(`/game/igdb-${igdbGameId}`);
+                    } else if (gameId) {
+                      console.log("Navigating to game:", gameId);
+                      navigate(`/game/${gameId}`);
+                    } else if (gameTitle) {
+                      console.log("Navigating with game title:", gameTitle);
+                      navigate(`/game/${encodeURIComponent(gameTitle)}`);
+                    } else {
+                      console.warn(
+                        "No game identifier found in activity data:",
+                        activity.activity_data,
+                      );
+                      // Fallback to original activity click handler
+                      onActivityClick(activity);
+                    }
+                  } catch (error) {
+                    console.error("Error navigating to game page:", error);
+                    // Fallback to original activity click handler
+                    onActivityClick(activity);
+                  }
+                }}
               >
                 <Card
                   className={`group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.01] border-0 bg-gradient-to-br from-card via-card to-card/80 backdrop-blur-sm ${getActivityGradient(activity.type)} w-full scale-[0.99]`}
@@ -934,19 +974,7 @@ const SocialTimeline = ({
                             <img
                               src={activity.game_cover_url}
                               alt={activity.game || "Game cover"}
-                              className="w-20 h-28 object-cover cursor-pointer transition-transform duration-300 group-hover/cover:scale-110"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const igdbGameId =
-                                  activity.activity_data?.igdb_game_id;
-                                if (igdbGameId) {
-                                  navigate(`/game/igdb-${igdbGameId}`);
-                                } else if (activity.activity_data?.game_id) {
-                                  navigate(
-                                    `/game/${activity.activity_data.game_id}`,
-                                  );
-                                }
-                              }}
+                              className="w-20 h-28 object-cover transition-transform duration-300 group-hover/cover:scale-110"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = "none";
