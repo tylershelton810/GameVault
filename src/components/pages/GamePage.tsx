@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -122,7 +122,6 @@ interface FriendGameData {
 
 const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
-  console.log("gameID", gameId);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeItem, setActiveItem] = useState("");
@@ -155,14 +154,18 @@ const GamePage = () => {
 
   const [existingReview, setExistingReview] = useState<GameReview | null>(null);
 
+  // Memoize stable values to prevent unnecessary re-renders
+  const stableGameId = useMemo(() => gameId, [gameId]);
+  const stableUserId = useMemo(() => user?.id, [user?.id]);
+
   // Fetch game collection data or check if it's a direct IGDB game ID
   const fetchGameCollection = useCallback(async () => {
-    if (!gameId || !user) return;
+    if (!stableGameId || !stableUserId) return;
 
     try {
       // Check if this is an IGDB ID from search (format: igdb-{id})
-      if (gameId.startsWith("igdb-")) {
-        const igdbId = parseInt(gameId.replace("igdb-", ""));
+      if (stableGameId.startsWith("igdb-")) {
+        const igdbId = parseInt(stableGameId.replace("igdb-", ""));
         setHasUserGame(false);
         setIgdbGameId(igdbId);
 
@@ -171,7 +174,7 @@ const GamePage = () => {
           .from("game_collections")
           .select("*")
           .eq("igdb_game_id", igdbId)
-          .eq("user_id", user.id)
+          .eq("user_id", stableUserId)
           .single();
 
         if (existingGame) {
@@ -191,7 +194,7 @@ const GamePage = () => {
             .from("game_reviews")
             .select("*")
             .eq("game_collection_id", existingGame.id)
-            .eq("user_id", user.id)
+            .eq("user_id", stableUserId)
             .maybeSingle();
 
           if (reviewData) {
@@ -209,8 +212,8 @@ const GamePage = () => {
       const { data, error } = await supabase
         .from("game_collections")
         .select("*")
-        .eq("id", gameId)
-        .eq("user_id", user.id)
+        .eq("id", stableGameId)
+        .eq("user_id", stableUserId)
         .single();
 
       if (data) {
@@ -232,8 +235,8 @@ const GamePage = () => {
         const { data: reviewData } = await supabase
           .from("game_reviews")
           .select("*")
-          .eq("game_collection_id", gameId)
-          .eq("user_id", user.id)
+          .eq("game_collection_id", stableGameId)
+          .eq("user_id", stableUserId)
           .maybeSingle();
 
         if (reviewData) {
@@ -247,7 +250,7 @@ const GamePage = () => {
         const { data: otherUserGame } = await supabase
           .from("game_collections")
           .select("igdb_game_id, game_title")
-          .eq("id", gameId)
+          .eq("id", stableGameId)
           .single();
 
         if (otherUserGame) {
@@ -265,7 +268,7 @@ const GamePage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [gameId, user]);
+  }, [stableGameId, stableUserId]);
 
   // Fetch game details from IGDB
   const fetchGameDetails = useCallback(async () => {
@@ -301,7 +304,7 @@ const GamePage = () => {
 
   // Fetch friends' data for this game
   const fetchFriendsData = useCallback(async () => {
-    if (!igdbGameId || !user) return;
+    if (!igdbGameId || !stableUserId) return;
 
     try {
       // Get user's friends
@@ -314,7 +317,7 @@ const GamePage = () => {
           addressee:users!friendships_addressee_id_fkey(*)
         `,
         )
-        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+        .or(`requester_id.eq.${stableUserId},addressee_id.eq.${stableUserId}`)
         .eq("status", "accepted");
 
       if (friendsError) {
@@ -325,7 +328,7 @@ const GamePage = () => {
       const friendIds = [];
       for (const friendship of friendships || []) {
         const friendUser =
-          friendship.requester_id === user.id
+          friendship.requester_id === stableUserId
             ? friendship.addressee
             : friendship.requester;
         if (friendUser) {
@@ -390,7 +393,7 @@ const GamePage = () => {
     } catch (error) {
       console.error("Error fetching friends data:", error);
     }
-  }, [igdbGameId, user]);
+  }, [igdbGameId, stableUserId]);
 
   useEffect(() => {
     fetchGameCollection();
@@ -403,7 +406,7 @@ const GamePage = () => {
     }
   }, [igdbGameId, fetchGameDetails, fetchFriendsData]);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     const statusConfig = {
       playing: { label: "Playing", className: "bg-green-100 text-green-800" },
       played: { label: "Played", className: "bg-blue-100 text-blue-800" },
@@ -414,9 +417,9 @@ const GamePage = () => {
     };
     const config = statusConfig[status as keyof typeof statusConfig];
     return <Badge className={config.className}>{config.label}</Badge>;
-  };
+  }, []);
 
-  const renderStars = (rating: number) => {
+  const renderStars = useCallback((rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating / 2);
     const hasHalfStar = rating % 2 !== 0;
@@ -438,11 +441,11 @@ const GamePage = () => {
       }
     }
     return stars;
-  };
+  }, []);
 
   // Save game collection changes
-  const handleSaveGameData = async () => {
-    if (!gameCollection || !user) return;
+  const handleSaveGameData = useCallback(async () => {
+    if (!gameCollection || !stableUserId) return;
 
     setIsSaving(true);
     try {
@@ -471,7 +474,7 @@ const GamePage = () => {
       // Log completion activity if game was just marked as completed
       if (isCompleted && !previousCompleted) {
         await supabase.from("activity_feed").insert({
-          user_id: user.id,
+          user_id: stableUserId,
           activity_type: "game_completed",
           game_collection_id: gameCollection.id,
           activity_data: {
@@ -488,7 +491,7 @@ const GamePage = () => {
         personalRating[0] !== previousRating
       ) {
         await supabase.from("activity_feed").insert({
-          user_id: user.id,
+          user_id: stableUserId,
           activity_type: "game_rated",
           game_collection_id: gameCollection.id,
           activity_data: {
@@ -515,7 +518,7 @@ const GamePage = () => {
           if (!reviewUpdateError) {
             // Log review update activity
             await supabase.from("activity_feed").insert({
-              user_id: user.id,
+              user_id: stableUserId,
               activity_type: "review_posted",
               game_collection_id: gameCollection.id,
               game_review_id: existingReview.id,
@@ -537,7 +540,7 @@ const GamePage = () => {
           const { data: newReview, error: reviewInsertError } = await supabase
             .from("game_reviews")
             .insert({
-              user_id: user.id,
+              user_id: stableUserId,
               game_collection_id: gameCollection.id,
               review_text: reviewText,
               rating: personalRating[0],
@@ -548,7 +551,7 @@ const GamePage = () => {
           if (!reviewInsertError && newReview) {
             // Log new review activity
             await supabase.from("activity_feed").insert({
-              user_id: user.id,
+              user_id: stableUserId,
               activity_type: "review_posted",
               game_collection_id: gameCollection.id,
               game_review_id: newReview.id,
@@ -580,13 +583,23 @@ const GamePage = () => {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [
+    gameCollection,
+    stableUserId,
+    selectedStatus,
+    personalRating,
+    gameNotes,
+    isFavorite,
+    isCompleted,
+    reviewText,
+    existingReview,
+  ]);
 
   // Add game to user's collection
-  const handleAddGame = async () => {
-    if (!user || !gameDetails || !igdbGameId || !selectedStatus) {
+  const handleAddGame = useCallback(async () => {
+    if (!stableUserId || !gameDetails || !igdbGameId || !selectedStatus) {
       console.error("Missing required data for adding game:", {
-        user: !!user,
+        user: !!stableUserId,
         gameDetails: !!gameDetails,
         igdbGameId,
         selectedStatus,
@@ -597,7 +610,7 @@ const GamePage = () => {
     setIsSaving(true);
     try {
       const gameData = {
-        user_id: user.id,
+        user_id: stableUserId,
         igdb_game_id: igdbGameId,
         game_title: gameDetails.name,
         game_cover_url: gameDetails.cover?.url
@@ -637,7 +650,7 @@ const GamePage = () => {
       // If the game is marked as completed, log completion activity
       if (isCompleted) {
         await supabase.from("activity_feed").insert({
-          user_id: user.id,
+          user_id: stableUserId,
           activity_type: "game_completed",
           game_collection_id: insertedGameData.id,
           activity_data: {
@@ -650,7 +663,7 @@ const GamePage = () => {
       // If there's a rating, log rating activity
       if (selectedStatus === "played" && personalRating[0]) {
         await supabase.from("activity_feed").insert({
-          user_id: user.id,
+          user_id: stableUserId,
           activity_type: "game_rated",
           game_collection_id: insertedGameData.id,
           activity_data: {
@@ -666,7 +679,7 @@ const GamePage = () => {
         const { data: reviewData, error: reviewError } = await supabase
           .from("game_reviews")
           .insert({
-            user_id: user.id,
+            user_id: stableUserId,
             game_collection_id: insertedGameData.id,
             review_text: reviewText,
             rating: personalRating[0],
@@ -677,7 +690,7 @@ const GamePage = () => {
         if (!reviewError && reviewData) {
           // Log review activity
           await supabase.from("activity_feed").insert({
-            user_id: user.id,
+            user_id: stableUserId,
             activity_type: "review_posted",
             game_collection_id: insertedGameData.id,
             game_review_id: reviewData.id,
@@ -704,11 +717,21 @@ const GamePage = () => {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [
+    stableUserId,
+    gameDetails,
+    igdbGameId,
+    selectedStatus,
+    personalRating,
+    gameNotes,
+    isCompleted,
+    isFavorite,
+    reviewText,
+  ]);
 
   // Remove game from user's collection
-  const handleRemoveGame = async () => {
-    if (!gameCollection || !user) return;
+  const handleRemoveGame = useCallback(async () => {
+    if (!gameCollection || !stableUserId) return;
 
     setIsRemoving(true);
     try {
@@ -753,9 +776,9 @@ const GamePage = () => {
     } finally {
       setIsRemoving(false);
     }
-  };
+  }, [gameCollection, stableUserId, existingReview]);
 
-  const resetAddGameForm = () => {
+  const resetAddGameForm = useCallback(() => {
     setSelectedStatus("");
     setGameNotes("");
     setPersonalRating([5]);
@@ -763,10 +786,10 @@ const GamePage = () => {
     setIsCompleted(false);
     setIsFavorite(false);
     setIsAddGameDialogOpen(false);
-  };
+  }, []);
 
   // Load existing review when editing
-  const loadExistingReview = async () => {
+  const loadExistingReview = useCallback(async () => {
     if (!gameCollection || selectedStatus !== "played") {
       setReviewText("");
       return;
@@ -795,7 +818,7 @@ const GamePage = () => {
     } finally {
       setIsLoadingReview(false);
     }
-  };
+  }, [gameCollection, selectedStatus]);
 
   if (isLoading) {
     return (
