@@ -153,17 +153,18 @@ export default function LandingPage() {
               </span>
             </div>
             <h1 className="text-6xl font-bold tracking-tight mb-6 text-foreground">
-              Build Your Gaming
+              Track, Rate & Discover
               <span
                 className="block"
                 style={{ color: `hsl(${currentTheme?.colors.primary})` }}
               >
-                Community
+                Video Games
               </span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Organize your game library, join exclusive Game Clubs, and connect
-              with fellow gamers who share your passion.
+              The ultimate video game tracking platform. Organize your gaming
+              library, rate and review games, connect with gaming communities,
+              and discover your next favorite adventure.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {user ? (
@@ -204,11 +205,11 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold tracking-tight mb-4 text-foreground">
-                Three Pillars of Gaming Excellence
+                Complete Video Game Management Platform
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Everything you need to enhance your gaming experience in one
-                powerful platform
+                Track your gaming progress, discover new titles, and connect
+                with fellow gamers - all in one comprehensive gaming platform
               </p>
             </div>
 
@@ -236,8 +237,9 @@ export default function LandingPage() {
                 </CardHeader>
                 <CardContent className="relative space-y-4">
                   <p className="text-muted-foreground leading-relaxed">
-                    Organize your entire game collection with smart
-                    categorization, detailed ratings, and personal notes.
+                    Organize your entire video game collection with smart
+                    categorization, detailed game ratings, personal reviews, and
+                    progress tracking for every title in your library.
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
@@ -289,8 +291,9 @@ export default function LandingPage() {
                 </CardHeader>
                 <CardContent className="relative space-y-4">
                   <p className="text-muted-foreground leading-relaxed">
-                    Build meaningful connections through shared gaming
-                    experiences and discover new favorites.
+                    Join vibrant gaming communities, share game reviews and
+                    ratings, follow friends' gaming activity, and discover new
+                    video games through social recommendations.
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
@@ -341,8 +344,9 @@ export default function LandingPage() {
                 </CardHeader>
                 <CardContent className="relative space-y-4">
                   <p className="text-muted-foreground leading-relaxed">
-                    Join specialized communities around your favorite games with
-                    discussions, events, and shared experiences.
+                    Create and join exclusive gaming clubs focused on specific
+                    video games, genres, or platforms. Participate in game
+                    discussions, community events, and collaborative reviews.
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
@@ -399,12 +403,13 @@ export default function LandingPage() {
                     </span>
                   </div>
                   <h3 className="text-3xl font-bold mb-4 text-foreground">
-                    Your Games, Perfectly Organized
+                    Video Game Library Management
                   </h3>
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    Track your gaming progress with intelligent categorization,
-                    detailed ratings, and personal notes. Never lose track of
-                    what to play next.
+                    Track your video game progress with intelligent
+                    categorization, detailed game ratings, and personal reviews.
+                    Manage your gaming backlog and never lose track of what to
+                    play next.
                   </p>
                 </div>
 
@@ -548,12 +553,13 @@ export default function LandingPage() {
                     </span>
                   </div>
                   <h3 className="text-3xl font-bold mb-4 text-foreground">
-                    Join Exclusive Gaming Communities
+                    Gaming Communities & Social Features
                   </h3>
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    Connect with passionate gamers in specialized clubs. Share
-                    strategies, discuss lore, and participate in community
-                    events.
+                    Connect with passionate video game enthusiasts in
+                    specialized gaming clubs. Share game strategies, discuss
+                    gaming experiences, and participate in community events and
+                    challenges.
                   </p>
                 </div>
 
@@ -599,11 +605,12 @@ export default function LandingPage() {
         <section className="py-24 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10">
           <div className="max-w-4xl mx-auto text-center px-4">
             <h2 className="text-4xl font-bold mb-6 text-foreground">
-              Ready to Level Up Your Gaming Experience?
+              Start Tracking Your Video Game Collection Today
             </h2>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of gamers who have already transformed how they
-              discover, organize, and enjoy games.
+              Join thousands of gamers who use Game Shlf to track their video
+              game libraries, discover new games, and connect with gaming
+              communities worldwide.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {user ? (
@@ -655,8 +662,10 @@ export default function LandingPage() {
                 </h4>
               </div>
               <p className="text-muted-foreground mb-6 max-w-md">
-                The ultimate platform for gamers to organize their library,
-                connect with communities, and discover their next favorite game.
+                The ultimate video game tracking and community platform.
+                Organize your gaming library, rate and review games, connect
+                with gaming communities, and discover your next favorite video
+                game.
               </p>
               <div className="flex gap-4">
                 {user ? (
