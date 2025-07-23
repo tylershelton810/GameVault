@@ -692,43 +692,84 @@ const SocialTimeline = ({
     }
   };
 
-  const getActivityColor = (type: string) => {
+  const getActivityGradient = (type: string) => {
     switch (type) {
       case "game_rated":
-        return "bg-yellow-50 border-yellow-200";
+        return "shadow-yellow-500/10 hover:shadow-yellow-500/20";
       case "review_posted":
-        return "bg-blue-50 border-blue-200";
+        return "shadow-blue-500/10 hover:shadow-blue-500/20";
       case "game_completed":
-        return "bg-green-50 border-green-200";
+        return "shadow-green-500/10 hover:shadow-green-500/20";
       case "game_added":
-        return "bg-purple-50 border-purple-200";
+        return "shadow-purple-500/10 hover:shadow-purple-500/20";
       default:
-        return "bg-gray-50 border-gray-200";
+        return "shadow-muted/10 hover:shadow-muted/20";
+    }
+  };
+
+  const getActivityColorBar = (type: string) => {
+    switch (type) {
+      case "game_rated":
+        return "bg-gradient-to-b from-yellow-400 to-yellow-600";
+      case "review_posted":
+        return "bg-gradient-to-b from-blue-400 to-blue-600";
+      case "game_completed":
+        return "bg-gradient-to-b from-green-400 to-green-600";
+      case "game_added":
+        return "bg-gradient-to-b from-purple-400 to-purple-600";
+      default:
+        return "bg-gradient-to-b from-muted-foreground/50 to-muted-foreground";
+    }
+  };
+
+  const getActivityIconBg = (type: string) => {
+    switch (type) {
+      case "game_rated":
+        return "bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 border border-yellow-400/30";
+      case "review_posted":
+        return "bg-gradient-to-br from-blue-400/20 to-blue-600/20 border border-blue-400/30";
+      case "game_completed":
+        return "bg-gradient-to-br from-green-400/20 to-green-600/20 border border-green-400/30";
+      case "game_added":
+        return "bg-gradient-to-br from-purple-400/20 to-purple-600/20 border border-purple-400/30";
+      default:
+        return "bg-gradient-to-br from-muted/20 to-muted/40 border border-muted/30";
     }
   };
 
   if (isLoading) {
     return (
-      <div className="w-full h-full bg-card/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-border">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-card-foreground">
-            Social Timeline
-          </h2>
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-4 h-9 shadow-sm transition-colors opacity-50 cursor-not-allowed">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Share Activity
-          </Button>
+      <div className="w-full h-full bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
+        {/* Header Section */}
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur-md border-b border-border/50 px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-1">
+                Social Timeline
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Stay connected with your gaming community
+              </p>
+            </div>
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 h-10 shadow-lg transition-all opacity-50 cursor-not-allowed">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Share Activity
+            </Button>
+          </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center min-h-[400px]">
-          <div className="relative">
-            <div className="h-12 w-12 rounded-full border-4 border-muted border-t-primary animate-spin" />
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <div className="relative mb-8">
+            <div className="h-16 w-16 rounded-full border-4 border-muted border-t-primary animate-spin" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="h-4 w-4 rounded-full bg-primary/20 animate-pulse" />
+              <div className="h-6 w-6 rounded-full bg-primary/20 animate-pulse" />
             </div>
           </div>
-          <p className="text-sm font-medium text-muted-foreground mt-4">
+          <h3 className="text-xl font-semibold text-foreground mb-2">
             Loading social timeline...
+          </h3>
+          <p className="text-muted-foreground text-center max-w-md">
+            Fetching the latest gaming activities from your friends
           </p>
         </div>
       </div>
@@ -736,181 +777,253 @@ const SocialTimeline = ({
   }
 
   return (
-    <div className="w-full h-full bg-card/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-border">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-card-foreground">
-          Social Timeline
-        </h2>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-4 h-9 shadow-sm transition-colors">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Share Activity
-        </Button>
+    <div className="w-full h-full bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
+      {/* Header Section */}
+      <div className="flex-shrink-0 bg-background/95 backdrop-blur-md border-b border-border/50 px-6 py-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-1">
+              Social Timeline
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Stay connected with your gaming community
+            </p>
+          </div>
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 h-10 shadow-lg transition-all hover:shadow-xl hover:scale-105">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Share Activity
+          </Button>
+        </div>
       </div>
 
-      <div
-        className="space-y-4 max-h-[400px] md:max-h-[500px] overflow-y-auto"
-        onScroll={handleScroll}
-        ref={scrollAreaRef}
-      >
-        {displayActivities.length > 0 ? (
-          displayActivities.map((activity) => (
-            <motion.div
-              key={activity.id}
-              layoutId={activity.id}
-              onClick={() => onActivityClick(activity)}
-            >
-              <Card
-                className={`p-4 cursor-pointer hover:shadow-md transition-all duration-200 rounded-xl border border-border bg-card shadow-sm`}
+      {/* Timeline Content */}
+      <div className="flex-1 px-6 py-6 overflow-hidden">
+        <div
+          className="space-y-6 h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+          onScroll={handleScroll}
+          ref={scrollAreaRef}
+        >
+          {displayActivities.length > 0 ? (
+            displayActivities.map((activity, index) => (
+              <motion.div
+                key={activity.id}
+                layoutId={activity.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+                onClick={() => onActivityClick(activity)}
               >
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
-                    <img
-                      src={activity.user.avatar}
-                      alt={activity.user.name}
-                      className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+                <Card
+                  className={`group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.01] border-0 bg-gradient-to-br from-card via-card to-card/80 backdrop-blur-sm ${getActivityGradient(activity.type)} w-full scale-[0.99]`}
+                >
+                  {/* Activity Type Indicator */}
+                  <div
+                    className={`absolute top-0 left-0 w-1 h-full ${getActivityColorBar(activity.type)}`}
+                  />
+
+                  {/* Floating Activity Icon */}
+                  <div
+                    className={`absolute top-4 right-4 w-10 h-10 rounded-full ${getActivityIconBg(activity.type)} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <span className="text-lg filter drop-shadow-sm">
+                      {getActivityIcon(activity.type)}
+                    </span>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="flex items-start gap-4">
+                      {/* Enhanced User Avatar */}
+                      <div className="relative flex-shrink-0">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 p-0.5">
+                          <img
+                            src={activity.user.avatar}
+                            alt={activity.user.name}
+                            className="w-full h-full rounded-full object-cover border-2 border-background shadow-md"
+                          />
+                        </div>
+                        {/* Online status indicator */}
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background shadow-sm" />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        {/* Enhanced Header */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <h4 className="font-semibold text-foreground text-base group-hover:text-primary transition-colors">
+                            {activity.user.name}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
+                              {activity.timestamp}
+                            </span>
+                            {activity.rating && (
+                              <div className="flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-full">
+                                <span className="text-yellow-500 text-xs">
+                                  ⭐
+                                </span>
+                                <span className="text-xs font-medium text-yellow-600">
+                                  {activity.rating}/10
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Enhanced Content */}
+                        <div className="mb-4">
+                          <h3 className="font-medium text-foreground mb-2 text-lg leading-tight">
+                            {activity.title}
+                          </h3>
+                          <p className="text-muted-foreground leading-relaxed">
+                            {activity.description}
+                          </p>
+                        </div>
+
+                        {/* Enhanced Action Buttons */}
+                        <div className="flex items-center gap-6">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-9 px-3 rounded-full transition-all duration-200 ${
+                              activity.user_has_liked
+                                ? "text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-600"
+                                : "text-muted-foreground hover:text-red-500 hover:bg-red-50"
+                            } ${likingActivity === activity.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLikeActivity(activity.id);
+                            }}
+                            disabled={likingActivity === activity.id}
+                          >
+                            <Heart
+                              className={`w-4 h-4 mr-2 transition-all duration-200 ${
+                                activity.user_has_liked
+                                  ? "fill-red-500 text-red-500 scale-110"
+                                  : ""
+                              } ${likingActivity === activity.id ? "animate-pulse" : ""}`}
+                            />
+                            <span className="text-sm font-medium">
+                              {activity.likes_count || 0}
+                            </span>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-9 px-3 rounded-full transition-all duration-200 ${
+                              showComments[activity.id]
+                                ? "text-blue-500 bg-blue-50 hover:bg-blue-100 hover:text-blue-600"
+                                : "text-muted-foreground hover:text-blue-500 hover:bg-blue-50"
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleComments(activity.id);
+                            }}
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            <span className="text-sm font-medium">
+                              {activity.comments_count || 0}
+                            </span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Enhanced Game Cover */}
+                      {activity.game_cover_url && (
+                        <div className="flex-shrink-0 relative group/cover">
+                          <div className="relative overflow-hidden rounded-xl shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                            <img
+                              src={activity.game_cover_url}
+                              alt={activity.game || "Game cover"}
+                              className="w-20 h-28 object-cover cursor-pointer transition-transform duration-300 group-hover/cover:scale-110"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const igdbGameId =
+                                  activity.activity_data?.igdb_game_id;
+                                if (igdbGameId) {
+                                  navigate(`/game/igdb-${igdbGameId}`);
+                                } else if (activity.activity_data?.game_id) {
+                                  navigate(
+                                    `/game/${activity.activity_data.game_id}`,
+                                  );
+                                }
+                              }}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = "none";
+                              }}
+                            />
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 bg-black/0 group-hover/cover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                              <span className="text-white opacity-0 group-hover/cover:opacity-100 transition-opacity duration-300 text-xs font-medium">
+                                View Game
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Comments Section */}
+                    <CommentsSection
+                      activity={activity}
+                      user={user}
+                      commentTexts={commentTexts}
+                      showComments={showComments}
+                      showCommentInput={showCommentInput}
+                      submittingComment={submittingComment}
+                      updateCommentText={updateCommentText}
+                      handleCommentActivity={handleCommentActivity}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">
-                        {getActivityIcon(activity.type)}
-                      </span>
-                      <h4 className="font-medium text-card-foreground text-sm">
-                        {activity.user.name}
-                      </h4>
-                      <span className="text-xs text-muted-foreground">
-                        {activity.timestamp}
-                      </span>
-                    </div>
-                    <h3 className="font-medium text-card-foreground mb-1">
-                      {activity.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {activity.description}
-                    </p>
-                    <div className="flex items-center gap-4 mt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-8 px-2 transition-colors ${
-                          activity.user_has_liked
-                            ? "text-destructive hover:text-destructive/80"
-                            : "text-muted-foreground hover:text-destructive"
-                        } ${likingActivity === activity.id ? "opacity-50 cursor-not-allowed" : ""}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLikeActivity(activity.id);
-                        }}
-                        disabled={likingActivity === activity.id}
-                      >
-                        <Heart
-                          className={`w-4 h-4 mr-1 transition-all ${
-                            activity.user_has_liked
-                              ? "fill-destructive text-destructive scale-110"
-                              : ""
-                          } ${likingActivity === activity.id ? "animate-pulse" : ""}`}
-                        />
-                        <span className="text-xs">
-                          {activity.likes_count || 0}
-                        </span>
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-8 px-2 transition-colors ${
-                          showComments[activity.id]
-                            ? "text-primary hover:text-primary/80"
-                            : "text-muted-foreground hover:text-primary"
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleComments(activity.id);
-                        }}
-                      >
-                        <MessageCircle className="w-4 h-4 mr-1" />
-                        <span className="text-xs">
-                          {activity.comments_count || 0}
-                        </span>
-                      </Button>
-                    </div>
-                  </div>
-
-                  {activity.game_cover_url && (
-                    <div className="flex-shrink-0">
-                      <img
-                        src={activity.game_cover_url}
-                        alt={activity.game || "Game cover"}
-                        className="w-16 h-20 rounded-lg object-cover border border-border shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Navigate to game detail page
-                          // Check if we have an IGDB game ID in the activity data
-                          const igdbGameId =
-                            activity.activity_data?.igdb_game_id;
-                          if (igdbGameId) {
-                            navigate(`/game/igdb-${igdbGameId}`);
-                          } else if (activity.activity_data?.game_id) {
-                            navigate(`/game/${activity.activity_data.game_id}`);
-                          }
-                        }}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = "none";
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Comments Section */}
-                <CommentsSection
-                  activity={activity}
-                  user={user}
-                  commentTexts={commentTexts}
-                  showComments={showComments}
-                  showCommentInput={showCommentInput}
-                  submittingComment={submittingComment}
-                  updateCommentText={updateCommentText}
-                  handleCommentActivity={handleCommentActivity}
-                />
-              </Card>
-            </motion.div>
-          ))
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🎮</div>
-            <h3 className="text-xl font-semibold text-card-foreground mb-2">
-              No activities yet
-            </h3>
-            <p className="text-muted-foreground">
-              {friends.length === 0
-                ? "Add some friends to see their gaming activities!"
-                : "Your friends haven't shared any gaming activities yet."}
-            </p>
-          </div>
-        )}
-
-        {/* Loading more indicator */}
-        {loadingMore && (
-          <div className="flex justify-center py-4">
-            <div className="flex items-center gap-2">
-              <div className="h-4 w-4 rounded-full border-2 border-muted border-t-primary animate-spin" />
-              <span className="text-sm text-muted-foreground">
-                Loading more activities...
-              </span>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <div className="text-center py-20">
+              <div className="relative mb-8">
+                <div className="text-8xl mb-4 animate-bounce">🎮</div>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-full blur-3xl opacity-30" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-3">
+                No activities yet
+              </h3>
+              <p className="text-muted-foreground text-lg max-w-md mx-auto leading-relaxed">
+                {friends.length === 0
+                  ? "Add some friends to see their gaming activities and start building your gaming community!"
+                  : "Your friends haven't shared any gaming activities yet. Be the first to share something!"}
+              </p>
+              <Button className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Share Your First Activity
+              </Button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* End of timeline indicator */}
-        {!hasMore && activities.length > 0 && (
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">
-              You've reached the end of the timeline
-            </p>
-          </div>
-        )}
+          {/* Loading more indicator */}
+          {loadingMore && (
+            <div className="flex justify-center py-8">
+              <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg border border-border/50">
+                <div className="h-5 w-5 rounded-full border-2 border-muted border-t-primary animate-spin" />
+                <span className="text-sm font-medium text-muted-foreground">
+                  Loading more activities...
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* End of timeline indicator */}
+          {!hasMore && activities.length > 0 && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center gap-2 bg-muted/50 rounded-full px-4 py-2">
+                <div className="w-2 h-2 bg-muted-foreground/50 rounded-full" />
+                <p className="text-sm text-muted-foreground font-medium">
+                  You've reached the end of the timeline
+                </p>
+                <div className="w-2 h-2 bg-muted-foreground/50 rounded-full" />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

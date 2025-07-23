@@ -18,20 +18,20 @@ const SocialTimeline = () => {
   }, []);
 
   return (
-    <div className="bg-background">
+    <div className="bg-background h-screen overflow-hidden">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}
       />
-      <div className="flex pt-16">
+      <div className="flex pt-16 h-full">
         <Sidebar
           activeItem="Social Timeline"
           isMobile={isMobile}
           isOpen={isSidebarOpen}
           onOpenChange={setIsSidebarOpen}
         />
-        <main className="flex-1 w-full md:w-auto bg-background">
-          <div className="container mx-auto p-4 md:p-6">
+        <main className="flex-1 bg-background overflow-hidden">
+          <div className="w-full h-full">
             <SocialTimelineComponent />
           </div>
         </main>

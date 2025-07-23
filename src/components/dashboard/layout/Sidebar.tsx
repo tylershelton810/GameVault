@@ -116,11 +116,14 @@ const Sidebar = ({
   };
   const SidebarContent = () => (
     <div
-      className="min-h-screen backdrop-blur-md border-r flex flex-col"
+      className="backdrop-blur-md border-r flex flex-col fixed left-0 z-30"
       style={{
         background: sidebarBg,
         borderColor: sidebarBorder,
         color: sidebarTextColor,
+        width: "280px",
+        top: "64px",
+        height: "calc(100vh - 64px)",
       }}
     >
       <div className="p-6">
@@ -172,54 +175,6 @@ const Sidebar = ({
             </Button>
           ))}
         </div>
-
-        <Separator
-          className="my-6"
-          style={{
-            backgroundColor: `hsl(${currentTheme.colors.border})`,
-          }}
-        />
-
-        <div className="space-y-3">
-          <h3
-            className="text-xs font-semibold px-4 py-1 uppercase tracking-wider opacity-70"
-            style={{
-              color: accentColor,
-            }}
-          >
-            Game Status
-          </h3>
-          <Button
-            variant="ghost"
-            className={`w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium ${isElectricPlayground ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
-            style={{ color: sidebarTextColor, opacity: 0.85 }}
-          >
-            <span className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-sm"></span>
-            Playing
-          </Button>
-          <Button
-            variant="ghost"
-            className={`w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium ${isElectricPlayground ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
-            style={{ color: sidebarTextColor, opacity: 0.85 }}
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full shadow-sm"
-              style={{ backgroundColor: primaryColor }}
-            ></span>
-            Played
-          </Button>
-          <Button
-            variant="ghost"
-            className={`w-full justify-start gap-3 h-9 rounded-xl text-sm font-medium ${isElectricPlayground ? "hover:bg-white/10" : "hover:bg-gray-100"}`}
-            style={{ color: sidebarTextColor, opacity: 0.85 }}
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full shadow-sm"
-              style={{ backgroundColor: accentColor }}
-            ></span>
-            Want to Play
-          </Button>
-        </div>
       </ScrollArea>
 
       <div
@@ -266,9 +221,11 @@ const Sidebar = ({
   }
 
   return (
-    <div className="w-[280px] hidden md:flex">
-      <SidebarContent />
-    </div>
+    <>
+      <div className="w-[280px] hidden md:flex">
+        <SidebarContent />
+      </div>
+    </>
   );
 };
 
