@@ -523,6 +523,7 @@ const GameLibrary = () => {
     if (!selectedGame || !selectedStatus || !user) return;
 
     setIsAddingGame(true);
+
     try {
       const gameData = {
         user_id: user.id,

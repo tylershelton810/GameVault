@@ -481,9 +481,12 @@ const TopNavigation = ({
               {user.email}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => navigate("/account")}
+            >
               <User className="mr-2 h-4 w-4" />
-              Profile
+              Account
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"

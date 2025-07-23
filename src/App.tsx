@@ -19,6 +19,7 @@ import PrivacyPolicy from "./components/pages/PrivacyPolicy";
 import TermsOfService from "./components/pages/TermsOfService";
 import StripeSuccess from "./components/pages/StripeSuccess";
 import StripeCancel from "./components/pages/StripeCancel";
+import Account from "./components/pages/Account";
 import { AuthProvider, useAuth } from "../supabase/auth";
 import { Toaster } from "./components/ui/toaster";
 import { LoadingScreen, LoadingSpinner } from "./components/ui/loading-spinner";
@@ -141,6 +142,14 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <StripeCancel />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/account"
+          element={
+            <PrivateRoute>
+              <Account />
             </PrivateRoute>
           }
         />

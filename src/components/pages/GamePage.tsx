@@ -58,6 +58,8 @@ import TopNavigation from "@/components/dashboard/layout/TopNavigation";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
 import { Tables } from "@/types/supabase";
+import { useToast } from "@/components/ui/use-toast";
+import confetti from "canvas-confetti";
 
 type GameCollection = Tables<"game_collections">;
 type GameReview = Tables<"game_reviews">;
@@ -124,6 +126,7 @@ const GamePage = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeItem, setActiveItem] = useState("");
   const [gameCollection, setGameCollection] = useState<GameCollection | null>(
     null,
@@ -504,6 +507,14 @@ const GamePage = () => {
 
       // Handle review update/creation
       if (selectedStatus === "played" && reviewText.trim()) {
+        // Get current review count for badge checking
+        const { data: currentReviews } = await supabase
+          .from("game_reviews")
+          .select("id")
+          .eq("user_id", stableUserId);
+
+        const previousReviewCount = currentReviews?.length || 0;
+
         if (existingReview) {
           // Update existing review
           const { error: reviewUpdateError } = await supabase
@@ -563,6 +574,12 @@ const GamePage = () => {
             });
 
             setExistingReview(newReview);
+
+            // Check for review badge achievement (only for new reviews)
+            checkForReviewBadgeEarned(
+              previousReviewCount,
+              previousReviewCount + 1,
+            );
           }
         }
       }
@@ -595,6 +612,128 @@ const GamePage = () => {
     existingReview,
   ]);
 
+  // Badge thresholds
+  const badgeThresholds = [
+    {
+      count: 5,
+      name: "Game Starter",
+      description: "Added your first 5 games!",
+    },
+    {
+      count: 10,
+      name: "Game Collector",
+      description: "Built a library of 10 games!",
+    },
+    {
+      count: 20,
+      name: "Gaming Enthusiast",
+      description: "Reached 20 games in your collection!",
+    },
+    {
+      count: 50,
+      name: "Game Curator",
+      description: "Curated a collection of 50 games!",
+    },
+    {
+      count: 100,
+      name: "Game Master",
+      description: "Achieved the ultimate collection of 100 games!",
+    },
+  ];
+
+  // Review badge thresholds
+  const reviewBadgeThresholds = [
+    {
+      count: 1,
+      name: "First Reviewer",
+      description: "Write your first game review!",
+    },
+    {
+      count: 5,
+      name: "Review Starter",
+      description: "Share your thoughts on 5 games!",
+    },
+    {
+      count: 10,
+      name: "Review Contributor",
+      description: "Write 10 thoughtful reviews!",
+    },
+    {
+      count: 25,
+      name: "Review Enthusiast",
+      description: "Share insights on 25 games!",
+    },
+    {
+      count: 50,
+      name: "Review Expert",
+      description: "Become a trusted voice with 50 reviews!",
+    },
+    {
+      count: 100,
+      name: "Review Master",
+      description: "Achieve mastery with 100 reviews!",
+    },
+    {
+      count: 250,
+      name: "Review Legend",
+      description: "Legendary status with 250 reviews!",
+    },
+    {
+      count: 500,
+      name: "Review Deity",
+      description: "Godlike achievement with 500 reviews!",
+    },
+  ];
+
+  const checkForBadgeEarned = (previousCount: number, newCount: number) => {
+    const earnedBadge = badgeThresholds.find(
+      (badge) => newCount >= badge.count && previousCount < badge.count,
+    );
+
+    if (earnedBadge) {
+      // Trigger confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#FFD700", "#FFA500", "#FF6347", "#32CD32", "#1E90FF"],
+      });
+
+      // Show toast notification
+      toast({
+        title: `🏆 Badge Earned: ${earnedBadge.name}!`,
+        description: earnedBadge.description,
+        duration: 5000,
+      });
+    }
+  };
+
+  const checkForReviewBadgeEarned = async (
+    previousCount: number,
+    newCount: number,
+  ) => {
+    const earnedBadge = reviewBadgeThresholds.find(
+      (badge) => newCount >= badge.count && previousCount < badge.count,
+    );
+
+    if (earnedBadge) {
+      // Trigger confetti with purple theme for reviews
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#8B5CF6", "#A855F7", "#C084FC", "#DDD6FE", "#EDE9FE"],
+      });
+
+      // Show toast notification
+      toast({
+        title: `📝 Review Badge Earned: ${earnedBadge.name}!`,
+        description: earnedBadge.description,
+        duration: 5000,
+      });
+    }
+  };
+
   // Add game to user's collection
   const handleAddGame = useCallback(async () => {
     if (!stableUserId || !gameDetails || !igdbGameId || !selectedStatus) {
@@ -608,6 +747,15 @@ const GamePage = () => {
     }
 
     setIsSaving(true);
+
+    // Get current game count for badge checking
+    const { data: currentGames } = await supabase
+      .from("game_collections")
+      .select("id")
+      .eq("user_id", stableUserId);
+
+    const previousGameCount = currentGames?.length || 0;
+
     try {
       const gameData = {
         user_id: stableUserId,
@@ -676,6 +824,14 @@ const GamePage = () => {
 
       // If there's a review and rating, create a review entry
       if (selectedStatus === "played" && reviewText.trim()) {
+        // Get current review count for badge checking
+        const { data: currentReviews } = await supabase
+          .from("game_reviews")
+          .select("id")
+          .eq("user_id", stableUserId);
+
+        const previousReviewCount = currentReviews?.length || 0;
+
         const { data: reviewData, error: reviewError } = await supabase
           .from("game_reviews")
           .insert({
@@ -702,6 +858,12 @@ const GamePage = () => {
           });
 
           setExistingReview(reviewData);
+
+          // Check for review badge achievement
+          checkForReviewBadgeEarned(
+            previousReviewCount,
+            previousReviewCount + 1,
+          );
         }
       }
 
@@ -709,6 +871,9 @@ const GamePage = () => {
       setGameCollection(insertedGameData);
       setHasUserGame(true);
       setGameTitle(insertedGameData.game_title);
+
+      // Check for badge achievement
+      checkForBadgeEarned(previousGameCount, previousGameCount + 1);
 
       // Reset form
       resetAddGameForm();
