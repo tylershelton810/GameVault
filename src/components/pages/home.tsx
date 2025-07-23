@@ -777,17 +777,6 @@ export default function LandingPage() {
               >
                 Privacy Policy
               </Link>
-              <a
-                href="https://app.termly.io/document/terms-of-use-for-website/your-terms-url"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors"
-              >
-                Terms of Service
-              </a>
-              <Link to="/" className="hover:text-foreground transition-colors">
-                Support
-              </Link>
             </div>
           </div>
         </div>
