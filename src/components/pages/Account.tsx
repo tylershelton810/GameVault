@@ -154,59 +154,92 @@ const Account = () => {
   const getGameBadges = (totalGames: number): GameBadge[] => {
     const badges: GameBadge[] = [
       {
+        id: "first-game",
+        name: "First Game",
+        description: "Add your very first game to your library",
+        icon: <Gamepad2 className="w-6 h-6" />,
+        requirement: 1,
+        earned: totalGames >= 1,
+        earnedDate: totalGames >= 1 ? new Date().toISOString() : undefined,
+        color: "text-green-600",
+        bgColor: "bg-green-100",
+      },
+      {
         id: "starter",
         name: "Game Starter",
         description: "Add your first 5 games to your library",
-        icon: <Gamepad2 className="w-6 h-6" />,
+        icon: <Target className="w-6 h-6" />,
         requirement: 5,
         earned: totalGames >= 5,
         earnedDate: totalGames >= 5 ? new Date().toISOString() : undefined,
-        color: "text-green-600",
-        bgColor: "bg-green-100",
+        color: "text-blue-600",
+        bgColor: "bg-blue-100",
       },
       {
         id: "collector",
         name: "Game Collector",
         description: "Build a library of 10 games",
-        icon: <Target className="w-6 h-6" />,
+        icon: <Star className="w-6 h-6" />,
         requirement: 10,
         earned: totalGames >= 10,
         earnedDate: totalGames >= 10 ? new Date().toISOString() : undefined,
-        color: "text-blue-600",
-        bgColor: "bg-blue-100",
+        color: "text-purple-600",
+        bgColor: "bg-purple-100",
       },
       {
         id: "enthusiast",
         name: "Gaming Enthusiast",
         description: "Reach 20 games in your collection",
-        icon: <Star className="w-6 h-6" />,
+        icon: <Award className="w-6 h-6" />,
         requirement: 20,
         earned: totalGames >= 20,
         earnedDate: totalGames >= 20 ? new Date().toISOString() : undefined,
-        color: "text-purple-600",
-        bgColor: "bg-purple-100",
+        color: "text-orange-600",
+        bgColor: "bg-orange-100",
       },
       {
         id: "curator",
         name: "Game Curator",
         description: "Curate a collection of 50 games",
-        icon: <Award className="w-6 h-6" />,
+        icon: <Crown className="w-6 h-6" />,
         requirement: 50,
         earned: totalGames >= 50,
         earnedDate: totalGames >= 50 ? new Date().toISOString() : undefined,
-        color: "text-orange-600",
-        bgColor: "bg-orange-100",
+        color: "text-yellow-600",
+        bgColor: "bg-yellow-100",
       },
       {
         id: "master",
         name: "Game Master",
         description: "Achieve the ultimate collection of 100 games",
-        icon: <Crown className="w-6 h-6" />,
+        icon: <Trophy className="w-6 h-6" />,
         requirement: 100,
         earned: totalGames >= 100,
         earnedDate: totalGames >= 100 ? new Date().toISOString() : undefined,
-        color: "text-yellow-600",
-        bgColor: "bg-yellow-100",
+        color: "text-red-600",
+        bgColor: "bg-red-100",
+      },
+      {
+        id: "legend",
+        name: "Game Legend",
+        description: "Legendary collection of 250 games",
+        icon: <Medal className="w-6 h-6" />,
+        requirement: 250,
+        earned: totalGames >= 250,
+        earnedDate: totalGames >= 250 ? new Date().toISOString() : undefined,
+        color: "text-indigo-600",
+        bgColor: "bg-indigo-100",
+      },
+      {
+        id: "deity",
+        name: "Game Deity",
+        description: "Godlike collection of 500 games",
+        icon: <Crown className="w-6 h-6" />,
+        requirement: 500,
+        earned: totalGames >= 500,
+        earnedDate: totalGames >= 500 ? new Date().toISOString() : undefined,
+        color: "text-pink-600",
+        bgColor: "bg-pink-100",
       },
     ];
 
@@ -624,83 +657,172 @@ const Account = () => {
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                       <Target className="w-5 h-5 text-blue-600" />
-                      Next Achievement
+                      Next Achievements
                     </h3>
-                    <div className="p-4 rounded-lg border-2 border-blue-200 bg-blue-50">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className={`${nextBadge.color} flex-shrink-0`}>
-                          {nextBadge.icon}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 dark:text-gray-800">
-                            {nextBadge.name}
-                          </h4>
-                          <p className="text-sm text-gray-700 dark:text-gray-600">
-                            {nextBadge.description}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm text-gray-800 dark:text-gray-700">
-                          <span>Progress</span>
-                          <span>
-                            {(() => {
-                              const currentCount =
-                                nextBadge.id.includes("social") ||
-                                nextBadge.id.includes("friend")
-                                  ? userStats?.totalFriends || 0
-                                  : nextBadge.id.includes("review")
-                                    ? userStats?.totalReviews || 0
-                                    : userStats?.totalGames || 0;
+                    <div className="space-y-4">
+                      {/* Game Collection Next Badge */}
+                      {(() => {
+                        const gameNextBadge = allBadgeTypes
+                          .filter(
+                            (badge) =>
+                              !badge.id.includes("social") &&
+                              !badge.id.includes("friend") &&
+                              !badge.id.includes("review"),
+                          )
+                          .find((badge) => !badge.earned);
 
-                              const itemType =
-                                nextBadge.id.includes("social") ||
-                                nextBadge.id.includes("friend")
-                                  ? "friends"
-                                  : nextBadge.id.includes("review")
-                                    ? "reviews"
-                                    : "games";
+                        if (gameNextBadge) {
+                          const currentCount = userStats?.totalGames || 0;
+                          return (
+                            <div className="p-4 rounded-lg border-2 border-blue-200 bg-blue-50">
+                              <div className="flex items-start gap-3 mb-3">
+                                <div
+                                  className={`${gameNextBadge.color} flex-shrink-0`}
+                                >
+                                  {gameNextBadge.icon}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-900 dark:text-gray-800">
+                                    {gameNextBadge.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-700 dark:text-gray-600">
+                                    {gameNextBadge.description}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm text-gray-800 dark:text-gray-700">
+                                  <span>Game Collection Progress</span>
+                                  <span>
+                                    {currentCount} / {gameNextBadge.requirement}{" "}
+                                    games
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={
+                                    (currentCount / gameNextBadge.requirement) *
+                                    100
+                                  }
+                                  className="h-2"
+                                />
+                                <p className="text-xs text-gray-600 dark:text-gray-500">
+                                  {gameNextBadge.requirement - currentCount}{" "}
+                                  more games needed
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
 
-                              return `${currentCount} / ${nextBadge.requirement} ${itemType}`;
-                            })()}
-                          </span>
-                        </div>
-                        <Progress
-                          value={(() => {
-                            const currentCount =
-                              nextBadge.id.includes("social") ||
-                              nextBadge.id.includes("friend")
-                                ? userStats?.totalFriends || 0
-                                : nextBadge.id.includes("review")
-                                  ? userStats?.totalReviews || 0
-                                  : userStats?.totalGames || 0;
+                      {/* Friends Next Badge */}
+                      {(() => {
+                        const friendNextBadge = allBadgeTypes
+                          .filter(
+                            (badge) =>
+                              badge.id.includes("social") ||
+                              badge.id.includes("friend"),
+                          )
+                          .find((badge) => !badge.earned);
 
-                            return (currentCount / nextBadge.requirement) * 100;
-                          })()}
-                          className="h-2"
-                        />
-                        <p className="text-xs text-gray-600 dark:text-gray-500">
-                          {(() => {
-                            const currentCount =
-                              nextBadge.id.includes("social") ||
-                              nextBadge.id.includes("friend")
-                                ? userStats?.totalFriends || 0
-                                : nextBadge.id.includes("review")
-                                  ? userStats?.totalReviews || 0
-                                  : userStats?.totalGames || 0;
+                        if (friendNextBadge) {
+                          const currentCount = userStats?.totalFriends || 0;
+                          return (
+                            <div className="p-4 rounded-lg border-2 border-green-200 bg-green-50">
+                              <div className="flex items-start gap-3 mb-3">
+                                <div
+                                  className={`${friendNextBadge.color} flex-shrink-0`}
+                                >
+                                  {friendNextBadge.icon}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-900 dark:text-gray-800">
+                                    {friendNextBadge.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-700 dark:text-gray-600">
+                                    {friendNextBadge.description}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm text-gray-800 dark:text-gray-700">
+                                  <span>Friends Progress</span>
+                                  <span>
+                                    {currentCount} /{" "}
+                                    {friendNextBadge.requirement} friends
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={
+                                    (currentCount /
+                                      friendNextBadge.requirement) *
+                                    100
+                                  }
+                                  className="h-2"
+                                />
+                                <p className="text-xs text-gray-600 dark:text-gray-500">
+                                  {friendNextBadge.requirement - currentCount}{" "}
+                                  more friends needed
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
 
-                            const itemType =
-                              nextBadge.id.includes("social") ||
-                              nextBadge.id.includes("friend")
-                                ? "friends"
-                                : nextBadge.id.includes("review")
-                                  ? "reviews"
-                                  : "games";
+                      {/* Reviews Next Badge */}
+                      {(() => {
+                        const reviewNextBadge = allBadgeTypes
+                          .filter((badge) => badge.id.includes("review"))
+                          .find((badge) => !badge.earned);
 
-                            return `${nextBadge.requirement - currentCount} more ${itemType} needed`;
-                          })()}
-                        </p>
-                      </div>
+                        if (reviewNextBadge) {
+                          const currentCount = userStats?.totalReviews || 0;
+                          return (
+                            <div className="p-4 rounded-lg border-2 border-purple-200 bg-purple-50">
+                              <div className="flex items-start gap-3 mb-3">
+                                <div
+                                  className={`${reviewNextBadge.color} flex-shrink-0`}
+                                >
+                                  {reviewNextBadge.icon}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-900 dark:text-gray-800">
+                                    {reviewNextBadge.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-700 dark:text-gray-600">
+                                    {reviewNextBadge.description}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm text-gray-800 dark:text-gray-700">
+                                  <span>Reviews Progress</span>
+                                  <span>
+                                    {currentCount} /{" "}
+                                    {reviewNextBadge.requirement} reviews
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={
+                                    (currentCount /
+                                      reviewNextBadge.requirement) *
+                                    100
+                                  }
+                                  className="h-2"
+                                />
+                                <p className="text-xs text-gray-600 dark:text-gray-500">
+                                  {reviewNextBadge.requirement - currentCount}{" "}
+                                  more reviews needed
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 )}
@@ -744,7 +866,16 @@ const Account = () => {
                             >
                               {badge.earned
                                 ? "✓ Earned"
-                                : `${badge.requirement} games needed`}
+                                : (() => {
+                                    const itemType =
+                                      badge.id.includes("social") ||
+                                      badge.id.includes("friend")
+                                        ? "friends"
+                                        : badge.id.includes("review")
+                                          ? "reviews"
+                                          : "games";
+                                    return `${badge.requirement} ${itemType} needed`;
+                                  })()}
                             </Badge>
                           </div>
                         </div>

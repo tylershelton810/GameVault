@@ -615,6 +615,11 @@ const GamePage = () => {
   // Badge thresholds
   const badgeThresholds = [
     {
+      count: 1,
+      name: "First Game",
+      description: "Added your very first game!",
+    },
+    {
       count: 5,
       name: "Game Starter",
       description: "Added your first 5 games!",
@@ -638,6 +643,16 @@ const GamePage = () => {
       count: 100,
       name: "Game Master",
       description: "Achieved the ultimate collection of 100 games!",
+    },
+    {
+      count: 250,
+      name: "Game Legend",
+      description: "Legendary collection of 250 games!",
+    },
+    {
+      count: 500,
+      name: "Game Deity",
+      description: "Godlike collection of 500 games!",
     },
   ];
 
