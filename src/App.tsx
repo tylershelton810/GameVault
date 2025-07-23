@@ -14,6 +14,11 @@ import GamePage from "./components/pages/GamePage";
 import GameClubs from "./components/pages/GameClubs";
 import GameClubPage from "./components/GameClub/GameClubPage";
 import Settings from "./components/pages/Settings";
+import About from "./components/pages/About";
+import PrivacyPolicy from "./components/pages/PrivacyPolicy";
+import TermsOfService from "./components/pages/TermsOfService";
+import StripeSuccess from "./components/pages/StripeSuccess";
+import StripeCancel from "./components/pages/StripeCancel";
 import { AuthProvider, useAuth } from "../supabase/auth";
 import { Toaster } from "./components/ui/toaster";
 import { LoadingScreen, LoadingSpinner } from "./components/ui/loading-spinner";
@@ -110,6 +115,32 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Settings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <PrivateRoute>
+              <About />
+            </PrivateRoute>
+          }
+        />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route
+          path="/stripe/success"
+          element={
+            <PrivateRoute>
+              <StripeSuccess />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/stripe/cancel"
+          element={
+            <PrivateRoute>
+              <StripeCancel />
             </PrivateRoute>
           }
         />

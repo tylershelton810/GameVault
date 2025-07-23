@@ -53,7 +53,7 @@ export default function LandingPage() {
               className="font-medium text-xl flex items-center gap-2"
             >
               <Gamepad2 className="h-6 w-6" />
-              GameVault
+              Game Shlf
             </Link>
           </div>
           <div className="flex items-center space-x-4">
@@ -64,7 +64,7 @@ export default function LandingPage() {
                     variant="ghost"
                     className="text-sm font-light hover:text-muted-foreground transition-colors"
                   >
-                    Dashboard
+                    Game Shlf
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -169,7 +169,7 @@ export default function LandingPage() {
               {user ? (
                 <Link to="/dashboard">
                   <Button size="lg" className="px-8 py-3 text-lg rounded-full">
-                    Go to Dashboard
+                    Go to Game Shlf
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -609,7 +609,7 @@ export default function LandingPage() {
               {user ? (
                 <Link to="/dashboard">
                   <Button size="lg" className="px-8 py-3 text-lg rounded-full">
-                    Go to Dashboard
+                    Go to Game Shlf
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -651,7 +651,7 @@ export default function LandingPage() {
                   style={{ color: `hsl(${currentTheme?.colors.primary})` }}
                 />
                 <h4 className="text-2xl font-bold text-foreground">
-                  GameVault
+                  Game Shlf
                 </h4>
               </div>
               <p className="text-muted-foreground mb-6 max-w-md">
@@ -662,7 +662,7 @@ export default function LandingPage() {
                 {user ? (
                   <Link to="/dashboard">
                     <Button variant="outline" className="rounded-full">
-                      Go to Dashboard
+                      Go to Game Shlf
                     </Button>
                   </Link>
                 ) : (
@@ -759,15 +759,23 @@ export default function LandingPage() {
 
           <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2025 GameVault. All rights reserved.
+              © 2025 Game Shlf. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <Link to="/" className="hover:text-foreground transition-colors">
+              <Link
+                to="/privacy-policy"
+                className="hover:text-foreground transition-colors"
+              >
                 Privacy Policy
               </Link>
-              <Link to="/" className="hover:text-foreground transition-colors">
+              <a
+                href="https://app.termly.io/document/terms-of-use-for-website/your-terms-url"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
                 Terms of Service
-              </Link>
+              </a>
               <Link to="/" className="hover:text-foreground transition-colors">
                 Support
               </Link>

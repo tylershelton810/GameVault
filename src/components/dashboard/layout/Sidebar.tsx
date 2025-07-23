@@ -54,7 +54,7 @@ const defaultNavItems: NavItem[] = [
 
 const defaultBottomItems: NavItem[] = [
   { icon: <Settings size={20} />, label: "Settings" },
-  { icon: <HelpCircle size={20} />, label: "Help" },
+  { icon: <HelpCircle size={20} />, label: "About" },
 ];
 
 const Sidebar = ({
@@ -106,6 +106,9 @@ const Sidebar = ({
       case "Settings":
         navigate("/settings");
         break;
+      case "About":
+        navigate("/about");
+        break;
       default:
         // For other items, just update the active state for now
         break;
@@ -128,7 +131,7 @@ const Sidebar = ({
           }}
         >
           <span className="text-2xl">🎮</span>
-          GameVault
+          Game Shlf
         </h2>
         <p className="text-sm opacity-80" style={{ color: sidebarTextColor }}>
           Track your gaming journey
