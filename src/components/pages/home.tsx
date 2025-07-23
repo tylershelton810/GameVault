@@ -43,7 +43,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="bg-background text-foreground">
       {/* Apple-style navigation */}
       <header className="fixed top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-[980px] mx-auto flex h-12 items-center justify-between px-4">

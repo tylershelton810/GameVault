@@ -14,7 +14,7 @@ const About = () => {
   const { currentTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 pt-20">
+    <div className="bg-background p-4 md:p-6 pt-20 min-h-screen">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-4">

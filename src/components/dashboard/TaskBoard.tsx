@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../supabase/auth";
 import { useTheme } from "@/lib/theme";
+import { useNavigate } from "react-router-dom";
 
 interface Activity {
   id: string;
@@ -182,6 +183,7 @@ const SocialTimeline = ({
 }: SocialTimelineProps) => {
   const { user } = useAuth();
   const { currentTheme } = useTheme();
+  const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -839,7 +841,19 @@ const SocialTimeline = ({
                       <img
                         src={activity.game_cover_url}
                         alt={activity.game || "Game cover"}
-                        className="w-16 h-20 rounded-lg object-cover border border-border shadow-sm"
+                        className="w-16 h-20 rounded-lg object-cover border border-border shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Navigate to game detail page
+                          // Check if we have an IGDB game ID in the activity data
+                          const igdbGameId =
+                            activity.activity_data?.igdb_game_id;
+                          if (igdbGameId) {
+                            navigate(`/game/igdb-${igdbGameId}`);
+                          } else if (activity.activity_data?.game_id) {
+                            navigate(`/game/${activity.activity_data.game_id}`);
+                          }
+                        }}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = "none";

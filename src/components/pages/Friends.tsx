@@ -68,6 +68,7 @@ interface FriendGame {
   dateAdded: string;
   isFavorite?: boolean;
   isCompleted?: boolean;
+  hasReview?: boolean;
 }
 
 interface SharedGame {
@@ -312,6 +313,17 @@ const Friends = () => {
         return;
       }
 
+      // Fetch friend's reviews
+      const gameIds = data.map((g) => g.id);
+      const { data: friendReviews } = await supabase
+        .from("game_reviews")
+        .select("game_collection_id")
+        .in("game_collection_id", gameIds);
+
+      const friendReviewsSet = new Set(
+        friendReviews?.map((r) => r.game_collection_id) || [],
+      );
+
       const transformedGames: FriendGame[] = data.map((game) => ({
         id: game.id,
         title: game.game_title,
@@ -324,6 +336,7 @@ const Friends = () => {
         dateAdded: game.date_added,
         isFavorite: game.is_favorite || false,
         isCompleted: game.is_completed || false,
+        hasReview: friendReviewsSet.has(game.id),
       }));
 
       setFriendGames(transformedGames);
@@ -509,12 +522,12 @@ const Friends = () => {
 
   if (isViewingFriend && selectedFriend) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <TopNavigation
           onMobileMenuClick={() => setIsSidebarOpen(true)}
           showMobileMenu={isMobile}
         />
-        <div className="flex h-[calc(100vh-64px)] mt-16">
+        <div className="flex pt-16">
           <Sidebar
             activeItem={activeItem}
             onItemClick={setActiveItem}
@@ -522,7 +535,7 @@ const Friends = () => {
             isOpen={isSidebarOpen}
             onOpenChange={setIsSidebarOpen}
           />
-          <div className="flex-1 overflow-auto w-full md:w-auto">
+          <div className="flex-1 w-full md:w-auto">
             <div className="p-4 md:p-8">
               <div className="flex items-center gap-4 mb-8">
                 <Button
@@ -673,7 +686,7 @@ const Friends = () => {
                                   <CheckCircle className="w-3 h-3 text-white" />
                                 </div>
                               )}
-                              {game.personalRating && (
+                              {game.hasReview && (
                                 <div className="bg-purple-500 rounded-full p-1">
                                   <MessageSquare className="w-3 h-3 text-white" />
                                 </div>
@@ -754,12 +767,12 @@ const Friends = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}
       />
-      <div className="flex h-[calc(100vh-64px)] mt-16">
+      <div className="flex pt-16">
         <Sidebar
           activeItem={activeItem}
           onItemClick={setActiveItem}
@@ -767,7 +780,7 @@ const Friends = () => {
           isOpen={isSidebarOpen}
           onOpenChange={setIsSidebarOpen}
         />
-        <div className="flex-1 overflow-auto w-full md:w-auto">
+        <div className="flex-1 w-full md:w-auto">
           <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-8">
               <div>

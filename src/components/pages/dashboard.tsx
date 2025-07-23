@@ -32,18 +32,18 @@ const Home = () => {
     }, 2000);
   };
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}
       />
-      <div className="flex h-[calc(100vh-64px)] mt-16">
+      <div className="flex pt-16">
         <Sidebar
           isMobile={isMobile}
           isOpen={isSidebarOpen}
           onOpenChange={setIsSidebarOpen}
         />
-        <main className="flex-1 overflow-auto w-full md:w-auto">
+        <main className="flex-1 w-full md:w-auto">
           <div className="container mx-auto px-4 md:px-6 pt-4 pb-2 flex justify-end">
             <Button
               onClick={handleRefresh}

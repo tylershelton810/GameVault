@@ -116,7 +116,7 @@ const Sidebar = ({
   };
   const SidebarContent = () => (
     <div
-      className="h-full backdrop-blur-md border-r flex flex-col"
+      className="min-h-screen backdrop-blur-md border-r flex flex-col"
       style={{
         background: sidebarBg,
         borderColor: sidebarBorder,
@@ -266,7 +266,7 @@ const Sidebar = ({
   }
 
   return (
-    <div className="w-[280px] h-full hidden md:flex">
+    <div className="w-[280px] hidden md:flex">
       <SidebarContent />
     </div>
   );

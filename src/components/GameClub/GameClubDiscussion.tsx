@@ -169,26 +169,79 @@ const GameClubDiscussion: React.FC<GameClubDiscussionProps> = ({ clubId }) => {
   const toggleReaction = async (messageId: string, emoji: string) => {
     if (!user) return;
 
-    try {
-      // Check if user already reacted with this emoji
-      const message = messages.find((m) => m.id === messageId);
-      const existingReaction = message?.reactions.find(
-        (r) => r.user_id === user.id && r.emoji === emoji,
-      );
+    // Find the message and existing reaction
+    const message = messages.find((m) => m.id === messageId);
+    const existingReaction = message?.reactions.find(
+      (r) => r.user_id === user.id && r.emoji === emoji,
+    );
 
+    // Optimistically update the UI first
+    setMessages((prevMessages) => {
+      return prevMessages.map((msg) => {
+        if (msg.id === messageId) {
+          if (existingReaction) {
+            // Remove the reaction optimistically
+            return {
+              ...msg,
+              reactions: msg.reactions.filter(
+                (r) => r.id !== existingReaction.id,
+              ),
+            };
+          } else {
+            // Add the reaction optimistically
+            const newReaction: Reaction = {
+              id: `temp-${Date.now()}`, // Temporary ID
+              user_id: user.id,
+              emoji,
+              created_at: new Date().toISOString(),
+              user: {
+                full_name:
+                  user.user_metadata?.full_name || user.email || "Unknown",
+              },
+            };
+            return {
+              ...msg,
+              reactions: [...msg.reactions, newReaction],
+            };
+          }
+        }
+        return msg;
+      });
+    });
+
+    try {
       if (existingReaction) {
-        // Remove reaction
-        await supabase
+        // Remove reaction from database
+        const { error } = await supabase
           .from("game_club_reactions")
           .delete()
           .eq("id", existingReaction.id);
+
+        if (error) {
+          // Revert optimistic update on error
+          fetchMessages();
+          throw error;
+        }
       } else {
-        // Add reaction
-        await supabase.from("game_club_reactions").insert({
-          message_id: messageId,
-          user_id: user.id,
-          emoji,
-        });
+        // Add reaction to database using upsert to handle conflicts
+        const { error } = await supabase.from("game_club_reactions").upsert(
+          {
+            message_id: messageId,
+            user_id: user.id,
+            emoji,
+          },
+          {
+            onConflict: "message_id,user_id,emoji",
+            ignoreDuplicates: true,
+          },
+        );
+
+        if (error && error.code !== "23505") {
+          // Revert optimistic update on error
+          fetchMessages();
+          // 23505 is unique constraint violation, which we can ignore
+          throw error;
+        }
       }
     } catch (error) {
       console.error("Error toggling reaction:", error);

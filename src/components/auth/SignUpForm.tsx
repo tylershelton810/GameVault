@@ -61,11 +61,13 @@ export default function SignUpForm() {
     try {
       await signUp(email, password, fullName, profilePicture || undefined);
       toast({
-        title: "Account created successfully",
-        description: "Please check your email to verify your account.",
-        duration: 5000,
+        title: "Account created successfully!",
+        description:
+          "Please check your email and click the verification link to activate your account before signing in.",
+        duration: 8000,
       });
-      navigate("/social-timeline");
+      // Don't navigate immediately - let user verify email first
+      navigate("/login");
     } catch (error) {
       setError("Error creating account");
     } finally {

@@ -50,7 +50,8 @@ Deno.serve(async (req) => {
       fields name, summary, storyline, cover.url, screenshots.url, genres.name, 
              platforms.name, release_dates.date, release_dates.platform.name,
              rating, rating_count, aggregated_rating, aggregated_rating_count,
-             involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+             involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
+             first_release_date, age_ratings.category, age_ratings.rating;
       where id = ${igdbGameId};
     `;
 

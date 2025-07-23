@@ -24,6 +24,8 @@ import {
   Camera,
   Menu,
   UserPlus,
+  Loader2,
+  X,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../supabase/auth";
@@ -35,6 +37,16 @@ import { Tables } from "@/types/supabase";
 type Notification = Tables<"notifications"> & {
   from_user: Tables<"users">;
 };
+
+interface IGDBGame {
+  id: number;
+  name: string;
+  cover?: {
+    url: string;
+  };
+  rating?: number;
+  summary?: string;
+}
 
 interface TopNavigationProps {
   onSearch?: (query: string) => void;
@@ -54,6 +66,10 @@ const TopNavigation = ({
   const [isUpdatingPicture, setIsUpdatingPicture] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<IGDBGame[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const handleProfilePictureUpdate = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -90,6 +106,88 @@ const TopNavigation = ({
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  // IGDB API search function
+  const searchIGDBGames = useCallback(async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        "https://hktnhglrdhigtevqvzvf.supabase.co/functions/v1/SearchGames",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Games:", data);
+
+      // Set the search results with the returned data
+      if (data && Array.isArray(data)) {
+        setSearchResults(data.slice(0, 5)); // Limit to 5 results for dropdown
+        setShowSearchResults(true);
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    } catch (error) {
+      console.error("Error searching games:", error);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Handle search input change with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchIGDBGames(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchIGDBGames]);
+
+  // Handle game selection
+  const handleGameSelect = (game: IGDBGame) => {
+    // Navigate to game detail page using IGDB ID
+    // We'll create a temporary game collection entry or use a special route
+    navigate(`/game/igdb-${game.id}`);
+    setSearchQuery("");
+    setSearchResults([]);
+    setShowSearchResults(false);
+  };
+
+  // Handle search input focus/blur
+  const handleSearchFocus = () => {
+    if (searchResults.length > 0) {
+      setShowSearchResults(true);
+    }
+  };
+
+  const handleSearchBlur = () => {
+    // Delay hiding results to allow for clicks
+    setTimeout(() => {
+      setShowSearchResults(false);
+    }, 200);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setShowSearchResults(false);
   };
 
   // Fetch notifications
@@ -220,15 +318,70 @@ const TopNavigation = ({
         </Link>
         <div className="relative w-full max-w-sm md:w-64">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          {isSearching && (
+            <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+          )}
+          {searchQuery && !isSearching && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <Input
             placeholder="Search games..."
-            className="pl-9 h-10 rounded-full border-0 text-sm focus:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+            className="pl-9 pr-9 h-10 rounded-full border-0 text-sm focus:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
             style={{
               backgroundColor: `hsl(${currentTheme.colors.muted})`,
               color: `hsl(${currentTheme.colors.foreground})`,
             }}
-            onChange={(e) => onSearch(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              onSearch(e.target.value);
+            }}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
           />
+
+          {/* Search Results Dropdown */}
+          {showSearchResults && searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+              {searchResults.map((game) => (
+                <div
+                  key={game.id}
+                  className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0 flex items-start gap-3"
+                  onClick={() => handleGameSelect(game)}
+                >
+                  {game.cover && (
+                    <img
+                      src={`https:${game.cover.url.replace("t_thumb", "t_cover_small")}`}
+                      alt={game.name}
+                      className="w-10 h-12 object-cover rounded flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm text-foreground truncate">
+                      {game.name}
+                    </h4>
+                    {game.rating && (
+                      <p className="text-xs text-muted-foreground">
+                        Rating: {Math.round(game.rating)}/100
+                      </p>
+                    )}
+                    {game.summary && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {game.summary.length > 100
+                          ? `${game.summary.substring(0, 100)}...`
+                          : game.summary}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

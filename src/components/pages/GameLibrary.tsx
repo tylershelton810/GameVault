@@ -219,7 +219,7 @@ const GameLibrary = () => {
           .eq("user_id", friend.id);
 
         if (friendGames) {
-          // Fetch reviews for friend's games
+          // Fetch reviews for friend's games - only get reviews that actually exist
           const gameCollectionIds = friendGames.map((g) => g.id);
           const { data: friendReviews } = await supabase
             .from("game_reviews")
@@ -235,6 +235,7 @@ const GameLibrary = () => {
               friendsGamesMap.set(game.igdb_game_id, []);
             }
 
+            // Only mark as having review if there's actually a review record for this specific game collection
             const hasReview = reviewsSet.has(game.id);
             const hasNotes = !!(
               game.personal_notes && game.personal_notes.trim()
@@ -250,7 +251,7 @@ const GameLibrary = () => {
               hasNotes,
             });
 
-            // Store friend's review status
+            // Store friend's review status correctly
             if (!friendsReviewsMap.has(game.igdb_game_id.toString())) {
               friendsReviewsMap.set(game.igdb_game_id.toString(), new Map());
             }
@@ -402,7 +403,7 @@ const GameLibrary = () => {
               .eq("user_id", friend.id);
 
             if (friendGames) {
-              // Fetch reviews for friend's games
+              // Fetch reviews for friend's games - only get reviews that actually exist
               const gameCollectionIds = friendGames.map((g) => g.id);
               const { data: friendReviews } = await supabase
                 .from("game_reviews")
@@ -418,6 +419,7 @@ const GameLibrary = () => {
                   friendsGamesMap.set(game.igdb_game_id, []);
                 }
 
+                // Only mark as having review if there's actually a review record for this specific game collection
                 const hasReview = reviewsSet.has(game.id);
                 const hasNotes = !!(
                   game.personal_notes && game.personal_notes.trim()
@@ -433,7 +435,7 @@ const GameLibrary = () => {
                   hasNotes,
                 });
 
-                // Store friend's review status
+                // Store friend's review status correctly
                 if (!friendsReviewsMap.has(game.igdb_game_id.toString())) {
                   friendsReviewsMap.set(
                     game.igdb_game_id.toString(),
@@ -905,13 +907,22 @@ const GameLibrary = () => {
     return stars;
   };
 
+  // Handle game selection - navigate to game detail page
+  const handleGameSelect = (game: IGDBGame) => {
+    // Navigate to game detail page using IGDB ID
+    navigate(`/game/igdb-${game.id}`);
+    setGameSearchTerm("");
+    setSearchResults([]);
+    setIsAddGameOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <TopNavigation
         onMobileMenuClick={() => setIsSidebarOpen(true)}
         showMobileMenu={isMobile}
       />
-      <div className="flex h-[calc(100vh-64px)] mt-16">
+      <div className="flex pt-16">
         <Sidebar
           activeItem={activeItem}
           onItemClick={setActiveItem}
@@ -920,7 +931,7 @@ const GameLibrary = () => {
           onOpenChange={setIsSidebarOpen}
         />
 
-        <div className="flex-1 overflow-auto w-full md:w-auto">
+        <div className="flex-1 w-full md:w-auto">
           <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-8">
               <div>
@@ -941,7 +952,7 @@ const GameLibrary = () => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Add Game to Library</DialogTitle>
+                    <DialogTitle>Search Games</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="relative">
@@ -956,13 +967,13 @@ const GameLibrary = () => {
                     </div>
 
                     {/* Search Results */}
-                    {searchResults.length > 0 && !selectedGame && (
+                    {searchResults.length > 0 && (
                       <div className="max-h-60 overflow-y-auto border rounded-md">
                         {searchResults.map((game) => (
                           <div
                             key={game.id}
-                            className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex items-start gap-3"
-                            onClick={() => setSelectedGame(game)}
+                            className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0 flex items-start gap-3"
+                            onClick={() => handleGameSelect(game)}
                           >
                             {game.cover && (
                               <img
@@ -976,13 +987,15 @@ const GameLibrary = () => {
                                 {game.name}
                               </h4>
                               {game.rating && (
-                                <p className="text-xs text-gray-600">
+                                <p className="text-xs text-muted-foreground">
                                   Rating: {Math.round(game.rating)}/100
                                 </p>
                               )}
                               {game.summary && (
-                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                                  {game.summary}
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                  {game.summary.length > 100
+                                    ? `${game.summary.substring(0, 100)}...`
+                                    : game.summary}
                                 </p>
                               )}
                             </div>
@@ -991,118 +1004,22 @@ const GameLibrary = () => {
                       </div>
                     )}
 
-                    {/* Selected Game */}
-                    {selectedGame && (
-                      <div className="border rounded-md p-4 bg-blue-50">
-                        <div className="flex items-start gap-3">
-                          {selectedGame.cover && (
-                            <img
-                              src={`https:${selectedGame.cover.url.replace("t_thumb", "t_cover_small")}`}
-                              alt={selectedGame.name}
-                              className="w-16 h-20 object-cover rounded"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <h4 className="font-medium">{selectedGame.name}</h4>
-                            {selectedGame.rating && (
-                              <p className="text-sm text-gray-600">
-                                Rating: {Math.round(selectedGame.rating)}/100
-                              </p>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedGame(null);
-                              setGameSearchTerm("");
-                            }}
-                          >
-                            Change
-                          </Button>
+                    {gameSearchTerm &&
+                      searchResults.length === 0 &&
+                      !isSearching && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">
+                            No games found. Try a different search term.
+                          </p>
                         </div>
+                      )}
+
+                    {!gameSearchTerm && (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          Start typing to search for games...
+                        </p>
                       </div>
-                    )}
-
-                    {selectedGame && (
-                      <>
-                        <Select
-                          value={selectedStatus}
-                          onValueChange={setSelectedStatus}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="playing">Playing</SelectItem>
-                            <SelectItem value="played">Played</SelectItem>
-                            <SelectItem value="want-to-play">
-                              Want to Play
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="completed"
-                              checked={isCompleted}
-                              onCheckedChange={setIsCompleted}
-                            />
-                            <Label htmlFor="completed">Completed</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="favorite"
-                              checked={isFavorite}
-                              onCheckedChange={setIsFavorite}
-                            />
-                            <Label htmlFor="favorite">Favorite</Label>
-                          </div>
-                        </div>
-
-                        {selectedStatus === "played" && (
-                          <>
-                            <div className="space-y-2">
-                              <Label>Rating: {personalRating[0]}/10</Label>
-                              <Slider
-                                value={personalRating}
-                                onValueChange={setPersonalRating}
-                                max={10}
-                                min={0.5}
-                                step={0.5}
-                                className="w-full"
-                              />
-                            </div>
-                            <Textarea
-                              placeholder="Write a review (optional)"
-                              value={reviewText}
-                              onChange={(e) => setReviewText(e.target.value)}
-                              rows={3}
-                            />
-                          </>
-                        )}
-
-                        <Textarea
-                          placeholder="Personal notes (optional)"
-                          value={gameNotes}
-                          onChange={(e) => setGameNotes(e.target.value)}
-                        />
-                        <Button
-                          className="w-full"
-                          onClick={handleAddGame}
-                          disabled={!selectedStatus || isAddingGame}
-                        >
-                          {isAddingGame ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Adding to Library...
-                            </>
-                          ) : (
-                            "Add to Library"
-                          )}
-                        </Button>
-                      </>
                     )}
                   </div>
                 </DialogContent>
@@ -1335,19 +1252,6 @@ const GameLibrary = () => {
                                 <FileText className="w-3 h-3 text-white" />
                               </div>
                             )}
-                          </div>
-                          <div className="absolute bottom-2 right-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditGame(game);
-                              }}
-                            >
-                              <Edit className="w-3 h-3 text-white" />
-                            </Button>
                           </div>
                         </div>
                         <CardContent className="p-4">
