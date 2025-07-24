@@ -22,7 +22,36 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check for required environment variables
+    const twitchClientId = Deno.env.get("TWITCH_CLIENT_ID");
+    const twitchClientSecret = Deno.env.get("TWITCH_CLIENT_SECRET");
+
+    console.log("Environment check:", {
+      hasClientId: !!twitchClientId,
+      hasClientSecret: !!twitchClientSecret,
+      clientIdLength: twitchClientId?.length || 0,
+      clientSecretLength: twitchClientSecret?.length || 0,
+    });
+
+    if (!twitchClientId || !twitchClientSecret) {
+      console.error("Missing Twitch API credentials");
+      return new Response(
+        JSON.stringify({
+          error: "Missing Twitch API credentials",
+          details: {
+            hasClientId: !!twitchClientId,
+            hasClientSecret: !!twitchClientSecret,
+          },
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     // Get Twitch OAuth token for IGDB API
+    console.log("Requesting Twitch OAuth token...");
     const twitchTokenResponse = await fetch(
       "https://id.twitch.tv/oauth2/token",
       {
@@ -31,19 +60,29 @@ Deno.serve(async (req) => {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          client_id: Deno.env.get("TWITCH_CLIENT_ID") || "",
-          client_secret: Deno.env.get("TWITCH_CLIENT_SECRET") || "",
+          client_id: twitchClientId,
+          client_secret: twitchClientSecret,
           grant_type: "client_credentials",
         }),
       },
     );
 
     if (!twitchTokenResponse.ok) {
-      throw new Error("Failed to get Twitch OAuth token");
+      const errorText = await twitchTokenResponse.text();
+      console.error("Twitch OAuth error:", {
+        status: twitchTokenResponse.status,
+        statusText: twitchTokenResponse.statusText,
+        error: errorText,
+      });
+      throw new Error(
+        `Failed to get Twitch OAuth token: ${twitchTokenResponse.status} - ${errorText}`,
+      );
     }
 
     const tokenData = await twitchTokenResponse.json();
     const accessToken = tokenData.access_token;
+
+    console.log("Successfully obtained Twitch OAuth token");
 
     // Query IGDB for detailed game information
     const igdbQuery = `
@@ -55,10 +94,11 @@ Deno.serve(async (req) => {
       where id = ${igdbGameId};
     `;
 
+    console.log("Querying IGDB for game ID:", igdbGameId);
     const igdbResponse = await fetch("https://api.igdb.com/v4/games", {
       method: "POST",
       headers: {
-        "Client-ID": Deno.env.get("TWITCH_CLIENT_ID") || "",
+        "Client-ID": twitchClientId,
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
@@ -66,10 +106,17 @@ Deno.serve(async (req) => {
     });
 
     if (!igdbResponse.ok) {
-      throw new Error(`IGDB API error: ${igdbResponse.status}`);
+      const errorText = await igdbResponse.text();
+      console.error("IGDB API error:", {
+        status: igdbResponse.status,
+        statusText: igdbResponse.statusText,
+        error: errorText,
+      });
+      throw new Error(`IGDB API error: ${igdbResponse.status} - ${errorText}`);
     }
 
     const gameData = await igdbResponse.json();
+    console.log("IGDB game data received:", gameData?.length || 0, "games");
 
     // If we have game data, also fetch similar games
     let similarGames = [];
@@ -164,7 +211,7 @@ Deno.serve(async (req) => {
               {
                 method: "POST",
                 headers: {
-                  "Client-ID": Deno.env.get("TWITCH_CLIENT_ID") || "",
+                  "Client-ID": twitchClientId,
                   Authorization: `Bearer ${accessToken}`,
                   "Content-Type": "application/json",
                 },
@@ -195,6 +242,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log(
+      "Returning response with",
+      gameData?.length || 0,
+      "games and",
+      similarGames?.length || 0,
+      "similar games",
+    );
+
     return new Response(
       JSON.stringify({
         gameData,
@@ -208,7 +263,11 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error fetching game details:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to fetch game details" }),
+      JSON.stringify({
+        error: "Failed to fetch game details",
+        details: error.message,
+        stack: error.stack,
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
