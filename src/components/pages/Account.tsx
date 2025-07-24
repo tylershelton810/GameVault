@@ -46,6 +46,7 @@ interface UserStats {
   totalReviews: number;
   totalFriends: number;
   joinDate: string;
+  specialBadges: string[];
 }
 
 const Account = () => {
@@ -130,6 +131,17 @@ const Account = () => {
         const totalReviews = reviews?.length || 0;
         const totalFriends = friendships?.length || 0;
 
+        // Fetch user's special badges
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("special_badges")
+          .eq("id", user.id)
+          .single();
+
+        if (userError) {
+          console.error("Error fetching user data:", userError);
+        }
+
         setUserStats({
           totalGames,
           gamesPlayed,
@@ -139,6 +151,7 @@ const Account = () => {
           totalReviews,
           totalFriends,
           joinDate: user.created_at,
+          specialBadges: userData?.special_badges || [],
         });
       } catch (error) {
         console.error("Error fetching user stats:", error);
@@ -405,6 +418,27 @@ const Account = () => {
     return badges;
   };
 
+  // Get special badges (like Founder badge)
+  const getSpecialBadges = (specialBadges: string[]): GameBadge[] => {
+    const badges: GameBadge[] = [];
+
+    if (specialBadges.includes("founder")) {
+      badges.push({
+        id: "founder",
+        name: "Founder",
+        description: "One of the first 100 users!",
+        icon: <Crown className="w-6 h-6" />,
+        requirement: 1,
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        color: "text-yellow-600",
+        bgColor: "bg-yellow-100",
+      });
+    }
+
+    return badges;
+  };
+
   // Combine all badge types
   const allBadgeTypes = userStats
     ? [
@@ -414,9 +448,15 @@ const Account = () => {
       ]
     : [];
 
-  const earnedBadges = allBadgeTypes.filter((badge) => badge.earned);
+  const specialBadges = userStats
+    ? getSpecialBadges(userStats.specialBadges)
+    : [];
+  const earnedBadges = [
+    ...allBadgeTypes.filter((badge) => badge.earned),
+    ...specialBadges,
+  ];
   const nextBadge = allBadgeTypes.find((badge) => !badge.earned);
-  const allBadges = allBadgeTypes;
+  const allBadges = allBadgeTypes; // Special badges are not shown in "All Achievements"
 
   if (isLoading) {
     return (

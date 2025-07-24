@@ -74,6 +74,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (authError) throw authError;
 
+    // Check if user should get Founder badge (first 100 users)
+    if (authData.user) {
+      try {
+        // Get current user count
+        const { count, error: countError } = await supabase
+          .from("users")
+          .select("*", { count: "exact", head: true });
+
+        if (!countError && count !== null && count <= 100) {
+          // User is among the first 100, give them the Founder badge
+          const { error: badgeError } = await supabase
+            .from("users")
+            .update({ special_badges: ["founder"] })
+            .eq("id", authData.user.id);
+
+          if (badgeError) {
+            console.error("Error assigning Founder badge:", badgeError);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking user count for Founder badge:", error);
+      }
+    }
+
     // If profile picture is provided and user was created, upload it
     if (profilePicture && authData.user) {
       try {

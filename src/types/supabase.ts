@@ -578,6 +578,7 @@ export type Database = {
           name: string | null
           notification_preferences: Json | null
           onboarding_status: Json | null
+          special_badges: Json | null
           token_identifier: string
           updated_at: string | null
           user_id: string | null
@@ -592,6 +593,7 @@ export type Database = {
           name?: string | null
           notification_preferences?: Json | null
           onboarding_status?: Json | null
+          special_badges?: Json | null
           token_identifier: string
           updated_at?: string | null
           user_id?: string | null
@@ -606,6 +608,7 @@ export type Database = {
           name?: string | null
           notification_preferences?: Json | null
           onboarding_status?: Json | null
+          special_badges?: Json | null
           token_identifier?: string
           updated_at?: string | null
           user_id?: string | null
