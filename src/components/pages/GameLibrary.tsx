@@ -873,15 +873,30 @@ const GameLibrary = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      playing: { label: "Playing", className: "bg-green-100 text-green-800" },
-      played: { label: "Played", className: "bg-blue-100 text-blue-800" },
+      playing: {
+        label: "Playing",
+        className:
+          "bg-green-100 text-green-800 hover:bg-green-200 transition-colors duration-200",
+      },
+      played: {
+        label: "Played",
+        className:
+          "bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-200",
+      },
       "want-to-play": {
         label: "Want to Play",
-        className: "bg-yellow-100 text-yellow-800",
+        className:
+          "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors duration-200",
       },
     };
     const config = statusConfig[status as keyof typeof statusConfig];
-    return <Badge className={config.className}>{config.label}</Badge>;
+    return (
+      <Badge
+        className={`${config.className} hover:scale-105 transform transition-all duration-200`}
+      >
+        {config.label}
+      </Badge>
+    );
   };
 
   const renderStars = (rating: number) => {
@@ -932,22 +947,22 @@ const GameLibrary = () => {
           onOpenChange={setIsSidebarOpen}
         />
 
-        <div className="flex-1 w-full md:w-auto">
-          <div className="p-4 md:p-8">
-            <div className="flex justify-between items-center mb-8">
+        <div className="flex-1 w-full md:w-auto max-w-7xl mx-auto">
+          <div className="p-4 md:p-6 lg:p-8">
+            <div className="flex justify-between items-center mb-8 animate-slide-up">
               <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                  Game Library
+                <h1 className="text-3xl font-bold text-foreground mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                  🎮 Game Library
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground animate-fade-in">
                   Manage your game collection and track your progress
                 </p>
               </div>
 
               <Dialog open={isAddGameOpen} onOpenChange={setIsAddGameOpen}>
                 <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
+                  <Button className="hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary">
+                    <Plus className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:rotate-90" />
                     Add Game
                   </Button>
                 </DialogTrigger>
@@ -1157,19 +1172,19 @@ const GameLibrary = () => {
               </Dialog>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 animate-fade-in">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 transition-colors duration-200" />
                 <Input
                   placeholder="Search games..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 transition-all duration-200 focus:ring-2 focus:ring-primary/20 hover:shadow-md"
                 />
               </div>
               <div className="flex gap-2">
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-48">
+                  <SelectTrigger className="w-full sm:w-48 hover:shadow-md transition-all duration-200">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1182,8 +1197,11 @@ const GameLibrary = () => {
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" className="shrink-0">
-                  <Filter className="w-4 h-4 sm:mr-2" />
+                <Button
+                  variant="outline"
+                  className="shrink-0 hover:scale-105 transition-all duration-200 hover:shadow-md"
+                >
+                  <Filter className="w-4 h-4 sm:mr-2 transition-transform duration-200 hover:rotate-12" />
                   <span className="hidden sm:inline">Filter</span>
                 </Button>
               </div>
@@ -1192,19 +1210,31 @@ const GameLibrary = () => {
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              className="w-full"
+              className="w-full animate-scale-in"
             >
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="all">
+              <TabsList className="grid w-full grid-cols-4 bg-muted/50 backdrop-blur-sm">
+                <TabsTrigger
+                  value="all"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600"
+                >
                   All Games ({games.length})
                 </TabsTrigger>
-                <TabsTrigger value="playing">
+                <TabsTrigger
+                  value="playing"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600"
+                >
                   Playing ({games.filter((g) => g.status === "playing").length})
                 </TabsTrigger>
-                <TabsTrigger value="played">
+                <TabsTrigger
+                  value="played"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600"
+                >
                   Played ({games.filter((g) => g.status === "played").length})
                 </TabsTrigger>
-                <TabsTrigger value="want-to-play">
+                <TabsTrigger
+                  value="want-to-play"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-600"
+                >
                   Want to Play (
                   {games.filter((g) => g.status === "want-to-play").length})
                 </TabsTrigger>
@@ -1220,132 +1250,117 @@ const GameLibrary = () => {
                   </div>
                 ) : sortedGames.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
-                    {sortedGames.map((game) => (
+                    {sortedGames.map((game, index) => (
                       <Card
                         key={game.id}
-                        className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:-translate-y-2 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm border-2 hover:border-primary/30"
                         onClick={() => navigate(`/game/${game.id}`)}
+                        style={{
+                          animationDelay: `${index * 0.1}s`,
+                          animation: "slide-up 0.6s ease-out forwards",
+                        }}
                       >
-                        <div className="aspect-[3/4] relative">
+                        <div className="aspect-[3/4] relative overflow-hidden">
                           <img
                             src={game.cover}
                             alt={game.title}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           <div className="absolute top-2 left-2 flex gap-1">
+                            {getStatusBadge(game.status)}
                             {game.isFavorite && (
-                              <div className="bg-red-500 rounded-full p-1">
+                              <div className="bg-red-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg">
                                 <Heart className="w-3 h-3 text-white fill-white" />
                               </div>
                             )}
                             {game.isCompleted && (
-                              <div className="bg-green-500 rounded-full p-1">
+                              <div
+                                className="bg-green-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg"
+                                style={{ animationDelay: "0.1s" }}
+                              >
                                 <CheckCircle className="w-3 h-3 text-white" />
                               </div>
                             )}
                             {game.hasReview && (
-                              <div className="bg-purple-500 rounded-full p-1">
+                              <div
+                                className="bg-purple-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg"
+                                style={{ animationDelay: "0.2s" }}
+                              >
                                 <MessageSquare className="w-3 h-3 text-white" />
                               </div>
                             )}
                             {game.notes && game.notes.trim() && (
-                              <div className="bg-orange-500 rounded-full p-1">
+                              <div
+                                className="bg-orange-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg"
+                                style={{ animationDelay: "0.3s" }}
+                              >
                                 <FileText className="w-3 h-3 text-white" />
                               </div>
                             )}
                           </div>
+                          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                            <Edit className="w-4 h-4 text-white/80 hover:text-white transition-colors" />
+                          </div>
                         </div>
-                        <CardContent className="p-4">
-                          <h3 className="font-semibold text-sm mb-3 line-clamp-2">
+                        <CardContent className="p-4 transition-all duration-300 flex flex-col">
+                          <h3 className="font-semibold text-sm mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-300">
                             {game.title}
                           </h3>
-                          <div className="space-y-2">
+                          <div className="space-y-3 flex-1">
                             {/* Your rating */}
-                            <div className="bg-muted p-2 rounded-lg border border-border">
-                              <div className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage
-                                      src={
-                                        user?.user_metadata?.avatar_url ||
-                                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
-                                      }
-                                      alt="You"
-                                    />
-                                    <AvatarFallback className="text-[8px]">
-                                      {(user?.user_metadata?.full_name ||
-                                        user?.email ||
-                                        "Y")[0].toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
+                            {game.personalRating && (
+                              <div className="bg-muted/50 backdrop-blur-sm p-2 rounded-lg border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-md">
+                                <div className="flex items-center justify-start text-xs">
                                   <span className="text-primary font-medium">
-                                    You
+                                    Your Rating: {game.personalRating}/10
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  {game.personalRating && (
-                                    <span className="text-primary font-medium">
-                                      {game.personalRating}/10
-                                    </span>
-                                  )}
-                                  {getStatusBadge(game.status)}
-                                </div>
                               </div>
-                            </div>
+                            )}
 
                             {/* Friends with this game */}
                             {game.friendsWithGame &&
                               game.friendsWithGame.length > 0 && (
-                                <>
-                                  <p className="text-xs text-muted-foreground font-medium">
+                                <div className="space-y-1">
+                                  <p className="text-xs text-muted-foreground font-medium mb-1">
                                     Shared with {game.friendsWithGame.length}{" "}
                                     friend
                                     {game.friendsWithGame.length > 1 ? "s" : ""}
                                     :
                                   </p>
-                                  {game.friendsWithGame.map((friend, index) => (
-                                    <div
-                                      key={friend.id}
-                                      className="flex items-center justify-between text-xs"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Avatar className="h-5 w-5">
-                                          <AvatarImage
-                                            src={
-                                              friend.avatar_url ||
-                                              `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.name}`
-                                            }
-                                            alt={friend.name}
-                                          />
-                                          <AvatarFallback className="text-[8px]">
-                                            {friend.name[0]}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-foreground">
-                                          {friend.name}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        {friend.hasReview && (
-                                          <div className="bg-purple-100 rounded-full p-0.5">
-                                            <MessageSquare className="w-2.5 h-2.5 text-purple-600" />
-                                          </div>
-                                        )}
-                                        {friend.hasNotes && (
-                                          <div className="bg-orange-100 rounded-full p-0.5">
-                                            <FileText className="w-2.5 h-2.5 text-orange-600" />
-                                          </div>
-                                        )}
-                                        {friend.rating && (
-                                          <span className="text-muted-foreground">
-                                            {friend.rating}/10
+                                  <div className="space-y-1">
+                                    {game.friendsWithGame.map(
+                                      (friend, friendIndex) => (
+                                        <div
+                                          key={friend.id}
+                                          className="flex items-center gap-2 text-xs hover:bg-accent/30 p-1 rounded transition-all duration-200"
+                                          style={{
+                                            animationDelay: `${friendIndex * 0.1}s`,
+                                            animation:
+                                              "fade-in 0.4s ease-out forwards",
+                                          }}
+                                        >
+                                          <Avatar className="h-5 w-5 ring-1 ring-border hover:ring-2 hover:ring-primary/40 transition-all duration-300">
+                                            <AvatarImage
+                                              src={
+                                                friend.avatar_url ||
+                                                `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.name}`
+                                              }
+                                              alt={friend.name}
+                                            />
+                                            <AvatarFallback className="text-[8px] bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
+                                              {friend.name[0]}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <span className="text-foreground hover:text-primary transition-colors duration-300 truncate flex-1">
+                                            {friend.name}
                                           </span>
-                                        )}
-                                        {getStatusBadge(friend.status)}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </>
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
                               )}
                           </div>
                         </CardContent>
@@ -1353,20 +1368,29 @@ const GameLibrary = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-16">
+                  <div className="text-center py-16 animate-fade-in">
                     <div className="mb-6">
-                      <div className="text-6xl mb-4">🎮</div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2">
+                      <div className="text-6xl mb-4 animate-bounce-gentle">
+                        🎮
+                      </div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                         Your game library is looking a bit empty!
                       </h3>
-                      <p className="text-muted-foreground mb-6">
+                      <p
+                        className="text-muted-foreground mb-6 animate-fade-in"
+                        style={{ animationDelay: "0.2s" }}
+                      >
                         {activeTab === "all"
                           ? "Time to start building your epic game collection. What are you waiting for?"
                           : `No games in the &quot;${activeTab === "want-to-play" ? "Want to Play" : activeTab === "playing" ? "Playing" : "Played"}&quot; category yet.`}
                       </p>
                     </div>
-                    <Button onClick={() => setIsAddGameOpen(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
+                    <Button
+                      onClick={() => setIsAddGameOpen(true)}
+                      className="animate-bounce-in hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary"
+                      style={{ animationDelay: "0.4s" }}
+                    >
+                      <Plus className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:rotate-90" />
                       Add your first game
                     </Button>
                   </div>

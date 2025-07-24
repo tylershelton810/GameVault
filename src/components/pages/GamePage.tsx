@@ -427,11 +427,20 @@ const GamePage = () => {
 
   const getStatusBadge = useCallback((status: string) => {
     const statusConfig = {
-      playing: { label: "Playing", className: "bg-green-100 text-green-800" },
-      played: { label: "Played", className: "bg-blue-100 text-blue-800" },
+      playing: {
+        label: "Playing",
+        className:
+          "bg-green-100 text-green-800 hover:bg-green-200 hover:scale-110 transition-all duration-200",
+      },
+      played: {
+        label: "Played",
+        className:
+          "bg-blue-100 text-blue-800 hover:bg-blue-200 hover:scale-110 transition-all duration-200",
+      },
       "want-to-play": {
         label: "Want to Play",
-        className: "bg-yellow-100 text-yellow-800",
+        className:
+          "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:scale-110 transition-all duration-200",
       },
     };
     const config = statusConfig[status as keyof typeof statusConfig];
@@ -1065,19 +1074,18 @@ const GamePage = () => {
         <div className="flex-1 overflow-auto">
           <div className="p-6 max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-6 animate-in slide-in-from-top-4 duration-500">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 hover:scale-105 transition-all duration-200 hover:bg-accent/80"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
                 Back
               </Button>
               <div className="flex items-center gap-3">
-                <Gamepad2 className="w-8 h-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-foreground">
+                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {gameTitle || gameDetails?.name || "Loading..."}
                 </h1>
               </div>
@@ -1085,9 +1093,9 @@ const GamePage = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column - Game Cover and Basic Info */}
-              <div className="lg:col-span-1">
-                <Card className="overflow-hidden">
-                  <div className="aspect-[3/4] relative bg-gray-200 overflow-hidden">
+              <div className="lg:col-span-1 animate-in slide-in-from-left-4 duration-700">
+                <Card className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
+                  <div className="aspect-[3/4] relative bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group-hover:from-gray-100 group-hover:to-gray-200 transition-all duration-300">
                     {gameCollection?.game_cover_url ||
                     (gameDetails?.cover?.url &&
                       `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`) ? (
@@ -1097,7 +1105,7 @@ const GamePage = () => {
                           `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`
                         }
                         alt={gameTitle || gameDetails?.name || "Game cover"}
-                        className="w-full h-full object-cover absolute inset-0"
+                        className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
                         onError={(e) => {
                           // Fallback to smaller image if high-res fails
@@ -1111,26 +1119,28 @@ const GamePage = () => {
                         }}
                       />
                     ) : (
-                      <div className="text-center">
-                        <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">
+                      <div className="text-center flex flex-col items-center justify-center h-full">
+                        <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-2 animate-pulse-slow" />
+                        <p className="text-sm text-gray-500 animate-pulse">
                           Loading cover...
                         </p>
                       </div>
                     )}
                     {hasUserGame && gameCollection && (
                       <>
-                        <div className="absolute top-2 right-2">
-                          {getStatusBadge(gameCollection.status)}
+                        <div className="absolute top-2 right-2 animate-in slide-in-from-top-2 duration-500 delay-300">
+                          <div className="transform hover:scale-110 transition-transform duration-200">
+                            {getStatusBadge(gameCollection.status)}
+                          </div>
                         </div>
-                        <div className="absolute top-2 left-2 flex gap-1">
+                        <div className="absolute top-2 left-2 flex gap-1 animate-in slide-in-from-left-2 duration-500 delay-200">
                           {gameCollection.is_favorite && (
-                            <div className="bg-red-500 rounded-full p-1">
+                            <div className="bg-red-500 rounded-full p-1 hover:animate-wiggle hover:scale-110 transition-transform duration-200">
                               <Heart className="w-3 h-3 text-white fill-white" />
                             </div>
                           )}
                           {gameCollection.is_completed && (
-                            <div className="bg-green-500 rounded-full p-1">
+                            <div className="bg-green-500 rounded-full p-1 hover:animate-wiggle hover:scale-110 transition-transform duration-200">
                               <CheckCircle className="w-3 h-3 text-white" />
                             </div>
                           )}
@@ -1170,8 +1180,12 @@ const GamePage = () => {
                               }}
                             >
                               <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <Edit3 className="w-4 h-4 mr-2" />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="hover:scale-105 hover:shadow-md transition-all duration-200 hover:bg-blue-50 hover:border-blue-300 group"
+                                >
+                                  <Edit3 className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform duration-200" />
                                   Edit
                                 </Button>
                               </DialogTrigger>
@@ -1315,17 +1329,22 @@ const GamePage = () => {
                                       Cancel
                                     </Button>
                                     <Button
-                                      className="flex-1"
+                                      className="flex-1 hover:scale-105 transition-all duration-200 hover:shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                                       onClick={handleSaveGameData}
                                       disabled={!selectedStatus || isSaving}
                                     >
                                       {isSaving ? (
                                         <>
                                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                          Updating...
+                                          <span className="animate-pulse">
+                                            Updating...
+                                          </span>
                                         </>
                                       ) : (
-                                        "Update Game"
+                                        <>
+                                          <Save className="w-4 h-4 mr-2" />
+                                          Update Game
+                                        </>
                                       )}
                                     </Button>
                                   </div>
@@ -1341,9 +1360,9 @@ const GamePage = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:scale-105 hover:shadow-md transition-all duration-200 hover:border-red-300 group"
                                 >
-                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  <Trash2 className="w-4 h-4 mr-2 transition-transform duration-200" />
                                   Remove
                                 </Button>
                               </AlertDialogTrigger>
@@ -1365,15 +1384,20 @@ const GamePage = () => {
                                   <AlertDialogAction
                                     onClick={handleRemoveGame}
                                     disabled={isRemoving}
-                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                    className="bg-red-600 hover:bg-red-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg"
                                   >
                                     {isRemoving ? (
                                       <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Removing...
+                                        <span className="animate-pulse">
+                                          Removing...
+                                        </span>
                                       </>
                                     ) : (
-                                      "Remove Game"
+                                      <>
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Remove Game
+                                      </>
                                     )}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -1462,8 +1486,8 @@ const GamePage = () => {
                             }}
                           >
                             <DialogTrigger asChild>
-                              <Button className="w-full">
-                                <Plus className="w-4 h-4 mr-2" />
+                              <Button className="w-full hover:scale-105 transition-all duration-200 hover:shadow-lg bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 animate-glow group">
+                                <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
                                 Add Game
                               </Button>
                             </DialogTrigger>
@@ -1583,17 +1607,22 @@ const GamePage = () => {
                                   onChange={(e) => setGameNotes(e.target.value)}
                                 />
                                 <Button
-                                  className="w-full"
+                                  className="w-full hover:scale-105 transition-all duration-200 hover:shadow-lg bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
                                   onClick={handleAddGame}
                                   disabled={!selectedStatus || isSaving}
                                 >
                                   {isSaving ? (
                                     <>
                                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                      Adding to Library...
+                                      <span className="animate-pulse">
+                                        Adding to Library...
+                                      </span>
                                     </>
                                   ) : (
-                                    "Add to Library"
+                                    <>
+                                      <Plus className="w-4 h-4 mr-2" />
+                                      Add to Library
+                                    </>
                                   )}
                                 </Button>
                               </div>
@@ -1607,25 +1636,27 @@ const GamePage = () => {
               </div>
 
               {/* Right Column - Game Details and Friends */}
-              <div className="lg:col-span-2 space-y-4">
+              <div className="lg:col-span-2 space-y-4 animate-in slide-in-from-right-4 duration-700 delay-200">
                 {/* Game Details */}
                 {isLoadingDetails ? (
-                  <Card>
+                  <Card className="hover:shadow-lg transition-shadow duration-300">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-center py-6">
-                        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                        <span className="text-muted-foreground">
+                        <Loader2 className="w-6 h-6 animate-spin mr-2 text-blue-600" />
+                        <span className="text-muted-foreground animate-pulse">
                           Loading game details...
                         </span>
                       </div>
                     </CardContent>
                   </Card>
                 ) : gameDetails ? (
-                  <Card>
+                  <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">
                     <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Globe className="w-5 h-5" />
-                        Game Details
+                      <CardTitle className="flex items-center gap-2 text-lg group">
+                        <Globe className="w-5 h-5 group-hover:animate-wiggle text-blue-600" />
+                        <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                          Game Details
+                        </span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3 pt-0">
@@ -1713,7 +1744,7 @@ const GamePage = () => {
                                       <Badge
                                         key={index}
                                         variant="outline"
-                                        className="text-xs"
+                                        className="text-xs hover:scale-110 transition-transform duration-200 hover:shadow-md"
                                       >
                                         {ratingText}
                                       </Badge>
@@ -1752,7 +1783,7 @@ const GamePage = () => {
                                           <Badge
                                             key={index}
                                             variant="secondary"
-                                            className="text-xs"
+                                            className="text-xs hover:scale-110 transition-transform duration-200 hover:shadow-md hover:bg-blue-100"
                                           >
                                             {company.company.name}
                                           </Badge>
@@ -1772,7 +1803,7 @@ const GamePage = () => {
                                           <Badge
                                             key={index}
                                             variant="secondary"
-                                            className="text-xs"
+                                            className="text-xs hover:scale-110 transition-transform duration-200 hover:shadow-md hover:bg-blue-100"
                                           >
                                             {company.company.name}
                                           </Badge>
@@ -1798,7 +1829,7 @@ const GamePage = () => {
                                   <Badge
                                     key={index}
                                     variant="secondary"
-                                    className="text-xs"
+                                    className="text-xs hover:scale-110 transition-transform duration-200 hover:shadow-md hover:bg-purple-100"
                                   >
                                     {genre.name}
                                   </Badge>
@@ -1820,13 +1851,16 @@ const GamePage = () => {
                                     <Badge
                                       key={index}
                                       variant="outline"
-                                      className="text-xs"
+                                      className="text-xs hover:scale-110 transition-transform duration-200 hover:shadow-md hover:bg-green-50"
                                     >
                                       {platform.name}
                                     </Badge>
                                   ))}
                                 {gameDetails.platforms.length > 5 && (
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs hover:scale-110 transition-transform duration-200 hover:shadow-md hover:bg-green-50"
+                                  >
                                     +{gameDetails.platforms.length - 5} more
                                   </Badge>
                                 )}
@@ -1839,20 +1873,23 @@ const GamePage = () => {
                 ) : null}
 
                 {/* Friends Section */}
-                <Card>
+                <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Users className="w-5 h-5" />
-                      Friends with this Game ({friendsData.length})
+                    <CardTitle className="flex items-center gap-2 text-lg group">
+                      <Users className="w-5 h-5 group-hover:animate-bounce-gentle text-green-600" />
+                      <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                        Friends with this Game ({friendsData.length})
+                      </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     {friendsData.length > 0 ? (
                       <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {friendsData.map((friend) => (
+                        {friendsData.map((friend, index) => (
                           <div
                             key={friend.id}
-                            className="border rounded-lg p-3"
+                            className="border rounded-lg p-3 hover:shadow-md transition-all duration-300 hover:bg-accent/20 animate-in slide-in-from-bottom-2"
+                            style={{ animationDelay: `${index * 100}ms` }}
                           >
                             <div className="flex items-start gap-3">
                               <Avatar className="h-10 w-10">
@@ -1874,10 +1911,10 @@ const GamePage = () => {
                                   </h4>
                                   <div className="flex items-center gap-2">
                                     {friend.is_favorite && (
-                                      <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                                      <Heart className="w-4 h-4 text-red-500 fill-red-500 hover:animate-wiggle" />
                                     )}
                                     {friend.is_completed && (
-                                      <CheckCircle className="w-4 h-4 text-green-500" />
+                                      <CheckCircle className="w-4 h-4 text-green-500 hover:animate-wiggle" />
                                     )}
                                     {getStatusBadge(friend.status)}
                                   </div>
@@ -1929,11 +1966,11 @@ const GamePage = () => {
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <Users className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                        <Users className="w-10 h-10 text-gray-400 mx-auto mb-3 animate-float" />
                         <h3 className="text-base font-medium text-card-foreground mb-2">
                           No friends have this game yet
                         </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground animate-pulse">
                           Be the first among your friends to discover this game!
                         </p>
                       </div>
