@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
 import {
   Star,
   Heart,
@@ -37,6 +38,30 @@ interface TrendingGame {
   }[];
 }
 
+interface RecommendationGame {
+  id: number;
+  name: string;
+  cover?: {
+    url: string;
+  };
+  rating?: number;
+  summary?: string;
+  genres?: {
+    name: string;
+  }[];
+}
+
+interface GameRecommendation {
+  basedOn: {
+    id: string;
+    title: string;
+    cover: string;
+    personalRating?: number;
+    isFavorite: boolean;
+  };
+  similarGames: RecommendationGame[];
+}
+
 const Discover = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -46,6 +71,12 @@ const Discover = () => {
   const [friends, setFriends] = useState<any[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [recommendations, setRecommendations] = useState<GameRecommendation[]>(
+    [],
+  );
+  const [isLoadingRecommendations, setIsLoadingRecommendations] =
+    useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Fetch user's friends
   const fetchFriends = useCallback(async () => {
@@ -222,6 +253,130 @@ const Discover = () => {
     fetchFriends();
   }, [fetchFriends]);
 
+  // Fetch personalized recommendations
+  const fetchRecommendations = useCallback(async () => {
+    if (!user) {
+      setRecommendations([]);
+      setIsLoadingRecommendations(false);
+      setIsInitialLoad(false);
+      return;
+    }
+
+    setIsLoadingRecommendations(true);
+    try {
+      // Get user's favorite and highly-rated games (9+ rating)
+      const { data: allUserGames } = await supabase
+        .from("game_collections")
+        .select(
+          "id, igdb_game_id, game_title, game_cover_url, personal_rating, is_favorite",
+        )
+        .eq("user_id", user.id)
+        .or("is_favorite.eq.true,personal_rating.gte.9");
+
+      if (!allUserGames || allUserGames.length === 0) {
+        setRecommendations([]);
+        setIsLoadingRecommendations(false);
+        setIsInitialLoad(false);
+        return;
+      }
+
+      // Use a stable seed for randomization based on user ID and current date
+      // This ensures the same games are selected for the same user on the same day
+      const today = new Date().toDateString();
+      const seed = user.id + today;
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        const char = seed.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+
+      // Use the hash to create a stable "random" selection
+      const stableRandom = () => {
+        hash = (hash * 9301 + 49297) % 233280;
+        return hash / 233280;
+      };
+
+      const shuffledGames = [...allUserGames].sort(() => stableRandom() - 0.5);
+      const userGames = shuffledGames.slice(0, 3); // Limit to top 3 to avoid too many API calls
+
+      if (!userGames || userGames.length === 0) {
+        setRecommendations([]);
+        setIsLoadingRecommendations(false);
+        setIsInitialLoad(false);
+        return;
+      }
+
+      const recommendationsData: GameRecommendation[] = [];
+
+      // For each favorite/highly-rated game, find similar games
+      for (const game of userGames) {
+        try {
+          const response = await supabase.functions.invoke(
+            "supabase-functions-getGameDetails",
+            {
+              body: {
+                igdbGameId: game.igdb_game_id,
+                useSimilarGamesAPI: true,
+                useGenreMatching: false,
+              },
+            },
+          );
+
+          if (
+            response.data &&
+            response.data.similarGames &&
+            response.data.similarGames.length > 0
+          ) {
+            // Filter out games the user already has
+            const { data: existingGames } = await supabase
+              .from("game_collections")
+              .select("igdb_game_id")
+              .eq("user_id", user.id)
+              .in(
+                "igdb_game_id",
+                response.data.similarGames.map((g: any) => g.id),
+              );
+
+            const existingGameIds = new Set(
+              existingGames?.map((g) => g.igdb_game_id) || [],
+            );
+            const filteredSimilarGames = response.data.similarGames.filter(
+              (similarGame: any) => !existingGameIds.has(similarGame.id),
+            );
+
+            if (filteredSimilarGames.length > 0) {
+              recommendationsData.push({
+                basedOn: {
+                  id: game.id,
+                  title: game.game_title,
+                  cover:
+                    game.game_cover_url ||
+                    "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&q=80",
+                  personalRating: game.personal_rating,
+                  isFavorite: game.is_favorite || false,
+                },
+                similarGames: filteredSimilarGames.slice(0, 8), // Limit to 8 recommendations per game
+              });
+            }
+          }
+        } catch (error) {
+          console.error(
+            `Error fetching recommendations for game ${game.game_title}:`,
+            error,
+          );
+        }
+      }
+
+      setRecommendations(recommendationsData);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+    } finally {
+      setIsLoadingRecommendations(false);
+      setIsInitialLoad(false);
+    }
+  }, [user]);
+
   // Load trending games when friends change
   useEffect(() => {
     if (friends.length > 0) {
@@ -230,6 +385,11 @@ const Discover = () => {
       setIsLoadingTrending(false);
     }
   }, [friends, fetchTrendingGames]);
+
+  // Load recommendations when user changes
+  useEffect(() => {
+    fetchRecommendations();
+  }, [fetchRecommendations]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -301,22 +461,158 @@ const Discover = () => {
 
             {/* Because you loved... Section */}
             <div className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6">
-                Because you loved...
-              </h2>
-              <div className="bg-card rounded-lg border p-8 text-center">
-                <div className="text-gray-400 mb-4">
-                  <Compass className="w-16 h-16 mx-auto" />
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  Personalized recommendations coming soon!
-                </h3>
-                <p className="text-muted-foreground">
-                  We're working on analyzing your gaming preferences to suggest
-                  games you'll love. Check back soon for personalized
-                  recommendations based on your favorite games and ratings.
-                </p>
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-foreground">
+                  Because you loved...
+                </h2>
               </div>
+              {isLoadingRecommendations || isInitialLoad ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                  <span className="ml-2 text-muted-foreground">
+                    Finding games you'll love...
+                  </span>
+                </div>
+              ) : !isLoadingRecommendations &&
+                !isInitialLoad &&
+                recommendations.length > 0 ? (
+                <div className="space-y-6">
+                  {recommendations.map((recommendation) => (
+                    <div key={recommendation.basedOn.id} className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={recommendation.basedOn.cover}
+                          alt={recommendation.basedOn.title}
+                          className="w-12 h-16 object-cover rounded"
+                        />
+                        <div>
+                          <h3 className="text-lg font-medium text-foreground">
+                            {recommendation.basedOn.title}
+                          </h3>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            {recommendation.basedOn.isFavorite && (
+                              <div className="flex items-center gap-1">
+                                <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                                <span>Favorite</span>
+                              </div>
+                            )}
+                            {recommendation.basedOn.personalRating && (
+                              <div className="flex items-center gap-1">
+                                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                <span>
+                                  {recommendation.basedOn.personalRating}/10
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <ScrollArea className="w-full">
+                        <div className="flex gap-4 pb-4">
+                          {recommendation.similarGames.map((game) => (
+                            <Card
+                              key={game.id}
+                              className="flex-shrink-0 w-48 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                              onClick={async () => {
+                                console.log(
+                                  "Recommendation onClick - game:",
+                                  game,
+                                );
+                                console.log(
+                                  "Recommendation onClick - user:",
+                                  user,
+                                );
+
+                                // Check if user has this game in their library
+                                const {
+                                  data: userGameCollection,
+                                  error: userError,
+                                } = await supabase
+                                  .from("game_collections")
+                                  .select("id")
+                                  .eq("user_id", user?.id)
+                                  .eq("igdb_game_id", game.id)
+                                  .single();
+
+                                if (userGameCollection) {
+                                  console.log(
+                                    "Navigating to user game:",
+                                    userGameCollection.id,
+                                  );
+                                  navigate(`/game/${userGameCollection.id}`);
+                                } else {
+                                  console.log(
+                                    "Navigating with IGDB ID:",
+                                    game.id,
+                                  );
+                                  navigate(`/game/igdb-${game.id}`);
+                                }
+                              }}
+                            >
+                              <div className="aspect-[3/4] relative">
+                                <img
+                                  src={
+                                    game.cover?.url
+                                      ? `https:${game.cover.url.replace("t_thumb", "t_cover_big")}`
+                                      : "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&q=80"
+                                  }
+                                  alt={game.name}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute top-1 right-1">
+                                  {game.rating && (
+                                    <div className="bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                                      {Math.round(game.rating)}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <CardContent className="p-3">
+                                <h4 className="font-semibold text-xs mb-2 line-clamp-2 text-foreground">
+                                  {game.name}
+                                </h4>
+                                {game.genres && game.genres.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {game.genres.slice(0, 2).map((genre) => (
+                                      <Badge
+                                        key={genre.name}
+                                        className="text-[8px] px-1 py-0 bg-muted text-muted-foreground"
+                                      >
+                                        {genre.name}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                                {game.summary && (
+                                  <p className="text-[10px] text-muted-foreground line-clamp-3">
+                                    {game.summary.length > 80
+                                      ? `${game.summary.substring(0, 80)}...`
+                                      : game.summary}
+                                  </p>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                      </ScrollArea>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-card rounded-lg border p-8 text-center">
+                  <div className="text-gray-400 mb-4">
+                    <Compass className="w-16 h-16 mx-auto" />
+                  </div>
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    No recommendations yet!
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Rate some games highly (9+) or mark them as favorites to get
+                    personalized recommendations based on your preferences.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Trending with Friends Section */}

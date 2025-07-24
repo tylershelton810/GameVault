@@ -10,7 +10,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { igdbGameId } = await req.json();
+    const {
+      igdbGameId,
+      useSimilarGamesAPI = true,
+      useGenreMatching = false,
+    } = await req.json();
 
     if (!igdbGameId) {
       return new Response(
@@ -118,127 +122,47 @@ Deno.serve(async (req) => {
     const gameData = await igdbResponse.json();
     console.log("IGDB game data received:", gameData?.length || 0, "games");
 
-    // If we have game data, also fetch similar games
+    // If we have game data, fetch similar games using IGDB's similar games API
     let similarGames = [];
-    if (gameData && gameData.length > 0) {
+    if (gameData && gameData.length > 0 && useSimilarGamesAPI) {
       const game = gameData[0];
 
-      // Search for similar games using the game name to find related titles
-      // Extract key words from the game name for better matching
-      const gameWords = game.name
-        .toLowerCase()
-        .split(/[\s\-:]+/)
-        .filter(
-          (word) =>
-            word.length > 2 &&
-            ![
-              "the",
-              "and",
-              "for",
-              "are",
-              "but",
-              "not",
-              "you",
-              "all",
-              "can",
-              "had",
-              "her",
-              "was",
-              "one",
-              "our",
-              "out",
-              "day",
-              "get",
-              "has",
-              "him",
-              "his",
-              "how",
-              "man",
-              "new",
-              "now",
-              "old",
-              "see",
-              "two",
-              "way",
-              "who",
-              "boy",
-              "did",
-              "its",
-              "let",
-              "put",
-              "say",
-              "she",
-              "too",
-              "use",
-            ].includes(word),
+      try {
+        // Use IGDB's similar games endpoint
+        const similarGamesQuery = `
+          fields similar_games.name, similar_games.cover.url, similar_games.rating, 
+                 similar_games.summary, similar_games.genres.name, similar_games.first_release_date;
+          where id = ${igdbGameId};
+        `;
+
+        const similarGamesResponse = await fetch(
+          "https://api.igdb.com/v4/games",
+          {
+            method: "POST",
+            headers: {
+              "Client-ID": twitchClientId,
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: similarGamesQuery,
+          },
         );
 
-      if (gameWords.length > 0) {
-        // Try multiple search strategies for better recommendations
-        const searchStrategies = [];
-
-        // Strategy 1: Use the full game name (most specific)
-        searchStrategies.push(game.name);
-
-        // Strategy 2: Use first two significant words if available
-        if (gameWords.length >= 2) {
-          searchStrategies.push(`${gameWords[0]} ${gameWords[1]}`);
-        }
-
-        // Strategy 3: Use the most unique/specific word (longest word that's not a number)
-        const specificWord = gameWords
-          .filter((word) => !/^\d+$/.test(word)) // Filter out pure numbers
-          .sort((a, b) => b.length - a.length)[0]; // Get longest word
-        if (specificWord && specificWord !== gameWords[0]) {
-          searchStrategies.push(specificWord);
-        }
-
-        // Strategy 4: Fallback to first word only
-        searchStrategies.push(gameWords[0]);
-
-        // Try each search strategy until we get good results
-        for (const searchTerm of searchStrategies) {
-          try {
-            const similarQuery = `
-              fields name, cover.url, rating, summary, first_release_date;
-              search "${searchTerm}";
-              where id != ${igdbGameId} & cover != null & rating > 60;
-              limit 20;
-            `;
-
-            const similarResponse = await fetch(
-              "https://api.igdb.com/v4/games",
-              {
-                method: "POST",
-                headers: {
-                  "Client-ID": twitchClientId,
-                  Authorization: `Bearer ${accessToken}`,
-                  "Content-Type": "application/json",
-                },
-                body: similarQuery,
-              },
-            );
-
-            if (similarResponse.ok) {
-              const results = await similarResponse.json();
-              // If we get good results (more than 3 games), use them
-              if (results && results.length >= 3) {
-                similarGames = results;
-                break;
-              }
-              // Otherwise, keep the results but try the next strategy
-              if (results && results.length > similarGames.length) {
-                similarGames = results;
-              }
-            }
-          } catch (error) {
-            console.error(
-              `Error fetching similar games with term "${searchTerm}":`,
-              error,
-            );
-            // Continue to next strategy
+        if (similarGamesResponse.ok) {
+          const similarGamesData = await similarGamesResponse.json();
+          if (
+            similarGamesData[0]?.similar_games &&
+            similarGamesData[0].similar_games.length > 0
+          ) {
+            // Sort by rating (highest first) and limit to 12
+            similarGames = similarGamesData[0].similar_games
+              .filter((g) => g.rating && g.rating > 60) // Only include games with decent ratings
+              .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+              .slice(0, 12);
           }
         }
+      } catch (error) {
+        console.error("Error in similar games fetching:", error);
       }
     }
 
