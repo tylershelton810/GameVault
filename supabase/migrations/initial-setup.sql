@@ -38,8 +38,14 @@ $$;
 
 -- Create a function that will be triggered when a new user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $
+DECLARE
+    user_count integer;
 BEGIN
+  -- Get current user count before inserting the new user
+  SELECT COUNT(*) INTO user_count FROM public.users;
+  
+  -- Insert the new user record
   INSERT INTO public.users (
     id,
     user_id,
@@ -49,7 +55,8 @@ BEGIN
     avatar_url,
     token_identifier,
     created_at,
-    updated_at
+    updated_at,
+    special_badges
   ) VALUES (
     NEW.id,
     NEW.id::text,
@@ -59,11 +66,16 @@ BEGIN
     NEW.raw_user_meta_data->>'avatar_url',
     NEW.email,
     NEW.created_at,
-    NEW.updated_at
+    NEW.updated_at,
+    CASE 
+      WHEN user_count < 100 THEN '["founder"]'::jsonb
+      ELSE '[]'::jsonb
+    END
   );
+  
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create a trigger to call the function when a new user is added to auth.users
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
