@@ -11,6 +11,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -118,6 +129,7 @@ const Friends = () => {
     useState<string>("dateAdded");
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [friendToDelete, setFriendToDelete] = useState<Friend | null>(null);
 
   // Search for users to add as friends
   const searchUsers = useCallback(
@@ -1051,14 +1063,42 @@ const Friends = () => {
                                     <Eye className="w-4 h-4 mr-1 transition-transform duration-200 group-hover:scale-110" />
                                     View Games
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive"
-                                    onClick={() => removeFriend(friend.id)}
-                                  >
-                                    <UserMinus className="w-4 h-4 transition-transform duration-200 hover:scale-110" />
-                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive"
+                                      >
+                                        <UserMinus className="w-4 h-4 transition-transform duration-200 hover:scale-110" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                          Remove Friend
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to remove{" "}
+                                          {friend.full_name} from your friends
+                                          list? This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                          Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() =>
+                                            removeFriend(friend.id)
+                                          }
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Remove Friend
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               )}
                             </div>
@@ -1156,14 +1196,39 @@ const Friends = () => {
                                 >
                                   Accept
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive"
-                                  onClick={() => removeFriend(friend.id)}
-                                >
-                                  Decline
-                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive"
+                                    >
+                                      Decline
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>
+                                        Decline Friend Request
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to decline the
+                                        friend request from {friend.full_name}?
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>
+                                        Cancel
+                                      </AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => removeFriend(friend.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Decline Request
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </div>
                           </CardContent>
