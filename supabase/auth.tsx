@@ -74,9 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (authError) throw authError;
 
-    // Founder badge assignment is handled automatically by the database trigger
-    // in the handle_new_user() function to ensure reliable assignment
-
     // If profile picture is provided and user was created, upload it
     if (profilePicture && authData.user) {
       try {

@@ -39,13 +39,7 @@ $$;
 -- Create a function that will be triggered when a new user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $
-DECLARE
-    user_count integer;
 BEGIN
-  -- Get current user count before inserting the new user
-  SELECT COUNT(*) INTO user_count FROM public.users;
-  
-  -- Insert the new user record
   INSERT INTO public.users (
     id,
     user_id,
@@ -55,8 +49,7 @@ BEGIN
     avatar_url,
     token_identifier,
     created_at,
-    updated_at,
-    special_badges
+    updated_at
   ) VALUES (
     NEW.id,
     NEW.id::text,
@@ -66,11 +59,7 @@ BEGIN
     NEW.raw_user_meta_data->>'avatar_url',
     NEW.email,
     NEW.created_at,
-    NEW.updated_at,
-    CASE 
-      WHEN user_count < 100 THEN '["founder"]'::jsonb
-      ELSE '[]'::jsonb
-    END
+    NEW.updated_at
   );
   
   RETURN NEW;

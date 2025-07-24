@@ -131,16 +131,16 @@ const Account = () => {
         const totalReviews = reviews?.length || 0;
         const totalFriends = friendships?.length || 0;
 
-        // Fetch user's special badges
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("special_badges")
-          .eq("id", user.id)
-          .single();
+        // Special badges functionality temporarily disabled
+        // const { data: userData, error: userError } = await supabase
+        //   .from("users")
+        //   .select("special_badges")
+        //   .eq("id", user.id)
+        //   .single();
 
-        if (userError) {
-          console.error("Error fetching user data:", userError);
-        }
+        // if (userError) {
+        //   console.error("Error fetching user data:", userError);
+        // }
 
         setUserStats({
           totalGames,
@@ -151,7 +151,7 @@ const Account = () => {
           totalReviews,
           totalFriends,
           joinDate: user.created_at,
-          specialBadges: userData?.special_badges || [],
+          specialBadges: [],
         });
       } catch (error) {
         console.error("Error fetching user stats:", error);
@@ -421,21 +421,7 @@ const Account = () => {
   // Get special badges (like Founder badge)
   const getSpecialBadges = (specialBadges: string[]): GameBadge[] => {
     const badges: GameBadge[] = [];
-
-    if (specialBadges.includes("founder")) {
-      badges.push({
-        id: "founder",
-        name: "Founder",
-        description: "One of the first 100 users!",
-        icon: <Crown className="w-6 h-6" />,
-        requirement: 1,
-        earned: true,
-        earnedDate: new Date().toISOString(),
-        color: "text-yellow-600",
-        bgColor: "bg-yellow-100",
-      });
-    }
-
+    // Special badges functionality temporarily disabled
     return badges;
   };
 
