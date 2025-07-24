@@ -17,6 +17,7 @@ import {
   Users,
   MessageSquare,
   FileText,
+  Info,
 } from "lucide-react";
 import Sidebar from "@/components/dashboard/layout/Sidebar";
 import TopNavigation from "@/components/dashboard/layout/TopNavigation";
@@ -24,6 +25,7 @@ import { useAuth } from "../../../supabase/auth";
 import { supabase } from "../../../supabase/supabase";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useTheme } from "@/lib/theme";
+import { useNavigate } from "react-router-dom";
 
 interface GameBadge {
   id: string;
@@ -52,6 +54,7 @@ interface UserStats {
 const Account = () => {
   const { user } = useAuth();
   const { currentTheme } = useTheme();
+  const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState("Account");
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -490,7 +493,9 @@ const Account = () => {
         />
 
         <div className="flex-1 w-full md:w-auto">
-          <div className="p-4 md:p-8 max-w-6xl mx-auto">
+          <div
+            className={`p-4 md:p-8 max-w-6xl mx-auto ${isMobile ? "pb-20" : ""}`}
+          >
             {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -533,6 +538,15 @@ const Account = () => {
                           : ""}
                       </span>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 flex items-center gap-2"
+                      onClick={() => navigate("/about")}
+                    >
+                      <Info className="w-4 h-4" />
+                      About Game Shlf
+                    </Button>
                   </div>
                 </CardTitle>
               </CardHeader>

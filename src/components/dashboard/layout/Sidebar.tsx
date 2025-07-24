@@ -21,6 +21,7 @@ import {
   Menu,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   icon: React.ReactNode;
@@ -203,24 +204,35 @@ const Sidebar = ({
 
   if (isMobile) {
     return (
-      <Sheet open={isOpen} onOpenChange={onOpenChange}>
-        <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden fixed top-3 left-3 z-50 bg-background/90 backdrop-blur-md border rounded-lg h-9 w-9 shadow-sm"
-            style={{
-              borderColor: sidebarBorder,
-              color: sidebarTextColor,
-            }}
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-[280px] p-0">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border">
+        <div className="flex items-center justify-around py-2 px-4">
+          {items.map((item) => (
+            <Button
+              key={item.label}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "flex flex-col items-center gap-1 h-auto py-2 px-3 rounded-lg transition-all duration-200",
+                item.label === activeItem
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => handleItemClick(item.label)}
+            >
+              <span className="text-lg">{item.icon}</span>
+              <span className="text-xs font-medium">
+                {item.label === "Social Timeline"
+                  ? "Timeline"
+                  : item.label === "Game Library"
+                    ? "Library"
+                    : item.label === "Game Clubs"
+                      ? "Clubs"
+                      : item.label}
+              </span>
+            </Button>
+          ))}
+        </div>
+      </div>
     );
   }
 

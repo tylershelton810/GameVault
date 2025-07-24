@@ -13,7 +13,8 @@ import { useTheme, themes, ThemeName } from "@/lib/theme";
 import { Palette, Check, Bell, Heart, CreditCard } from "lucide-react";
 import TopNavigation from "../dashboard/layout/TopNavigation";
 import Sidebar from "../dashboard/layout/Sidebar";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { useAuth } from "../../../supabase/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "../../../supabase/supabase";
@@ -24,6 +25,7 @@ const Settings = () => {
     useAuth();
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [notificationPreferences, setNotificationPreferences] = useState<
     Record<string, boolean>
   >({
@@ -33,6 +35,17 @@ const Settings = () => {
   const [isSavingPreferences, setIsSavingPreferences] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+
+  // Check if mobile on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Load notification preferences on component mount
   useEffect(() => {
@@ -189,14 +202,16 @@ const Settings = () => {
       />
 
       <div className="flex pt-16">
-        <Sidebar
-          activeItem="Settings"
-          isMobile={false}
-          isOpen={isMobileMenuOpen}
-          onOpenChange={setIsMobileMenuOpen}
-        />
+        {!isMobile && (
+          <Sidebar
+            activeItem="Settings"
+            isMobile={false}
+            isOpen={isMobileMenuOpen}
+            onOpenChange={setIsMobileMenuOpen}
+          />
+        )}
 
-        <div className="flex-1 p-4 sm:p-6 md:p-8">
+        <div className={`flex-1 p-4 sm:p-6 md:p-8 ${isMobile ? "pb-20" : ""}`}>
           <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -548,6 +563,16 @@ const Settings = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <Sidebar
+          activeItem="Settings"
+          isMobile={true}
+          isOpen={isMobileMenuOpen}
+          onOpenChange={setIsMobileMenuOpen}
+        />
+      )}
     </div>
   );
 };

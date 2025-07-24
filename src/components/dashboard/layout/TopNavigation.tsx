@@ -299,8 +299,21 @@ const TopNavigation = ({
       style={{ borderColor: currentTheme.colors.border }}
     >
       <div className="flex items-center gap-3 md:gap-4 flex-1">
-        {/* Mobile: Add left padding to account for hamburger menu */}
-        <div className="relative w-full max-w-[200px] sm:max-w-sm md:max-w-none md:w-64 ml-12 md:ml-0 mr-3 md:mr-0">
+        {/* Settings icon for mobile */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden h-9 w-9 rounded-lg transition-colors"
+          onClick={() => navigate("/settings")}
+          style={{
+            backgroundColor: `hsl(${currentTheme.colors.muted})`,
+            color: `hsl(${currentTheme.colors.mutedForeground})`,
+          }}
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+
+        <div className="relative w-full max-w-[200px] sm:max-w-sm md:max-w-none md:w-64 mr-3 md:mr-0">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           {isSearching && (
             <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
