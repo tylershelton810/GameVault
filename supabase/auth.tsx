@@ -2,6 +2,13 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 
+type OnboardingStatus = {
+  games: boolean;
+  friends: boolean;
+  clubs: boolean;
+  completed: boolean;
+};
+
 type AuthContextType = {
   user: User | null;
   loading: boolean;
@@ -18,6 +25,8 @@ type AuthContextType = {
     preferences: Record<string, boolean>,
   ) => Promise<void>;
   getNotificationPreferences: () => Promise<Record<string, boolean>>;
+  getOnboardingStatus: () => Promise<OnboardingStatus>;
+  updateOnboardingStatus: (status: Partial<OnboardingStatus>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -173,6 +182,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data?.notification_preferences || { friend_requests: true };
   };
 
+  const getOnboardingStatus = async (): Promise<OnboardingStatus> => {
+    if (!user) throw new Error("No user logged in");
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("onboarding_status")
+      .eq("id", user.id)
+      .single();
+
+    if (error) throw error;
+
+    return (
+      data?.onboarding_status || {
+        games: false,
+        friends: false,
+        clubs: false,
+        completed: false,
+      }
+    );
+  };
+
+  const updateOnboardingStatus = async (status: Partial<OnboardingStatus>) => {
+    if (!user) throw new Error("No user logged in");
+
+    // Get current status first
+    const currentStatus = await getOnboardingStatus();
+    const updatedStatus = { ...currentStatus, ...status };
+
+    // Check if all steps are completed
+    if (updatedStatus.games && updatedStatus.friends && updatedStatus.clubs) {
+      updatedStatus.completed = true;
+    }
+
+    const { error } = await supabase
+      .from("users")
+      .update({ onboarding_status: updatedStatus })
+      .eq("id", user.id);
+
+    if (error) throw error;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -184,6 +234,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateProfilePicture,
         updateNotificationPreferences,
         getNotificationPreferences,
+        getOnboardingStatus,
+        updateOnboardingStatus,
       }}
     >
       {children}

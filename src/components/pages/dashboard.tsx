@@ -4,14 +4,27 @@ import Sidebar from "../dashboard/layout/Sidebar";
 import DashboardGrid from "../dashboard/DashboardGrid";
 import SocialTimeline from "../dashboard/TaskBoard";
 import GameClubList from "../GameClub/GameClubList";
+import OnboardingOverlay from "../onboarding/OnboardingOverlay";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "../../../supabase/auth";
 
 const Home = () => {
+  const { user, getOnboardingStatus, updateOnboardingStatus } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [currentOnboardingStep, setCurrentOnboardingStep] = useState<
+    "games" | "friends" | "clubs"
+  >("games");
+  const [onboardingStatus, setOnboardingStatus] = useState({
+    games: false,
+    friends: false,
+    clubs: false,
+    completed: false,
+  });
 
   useEffect(() => {
     const checkMobile = () => {
@@ -22,6 +35,64 @@ const Home = () => {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Check onboarding status on mount
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user) return;
+
+      try {
+        const status = await getOnboardingStatus();
+        setOnboardingStatus(status);
+
+        // If onboarding is not completed, show the next step
+        if (!status.completed) {
+          if (!status.games) {
+            setCurrentOnboardingStep("games");
+            setShowOnboarding(true);
+          } else if (!status.friends) {
+            setCurrentOnboardingStep("friends");
+            setShowOnboarding(true);
+          } else if (!status.clubs) {
+            setCurrentOnboardingStep("clubs");
+            setShowOnboarding(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user, getOnboardingStatus]);
+
+  const handleOnboardingStepComplete = async (
+    step: "games" | "friends" | "clubs",
+  ) => {
+    const newStatus = { ...onboardingStatus, [step]: true };
+    setOnboardingStatus(newStatus);
+
+    // Determine next step
+    if (step === "games" && !newStatus.friends) {
+      setTimeout(() => {
+        setCurrentOnboardingStep("friends");
+        setShowOnboarding(true);
+      }, 2000); // Show next step after 2 seconds
+    } else if (step === "friends" && !newStatus.clubs) {
+      setTimeout(() => {
+        setCurrentOnboardingStep("clubs");
+        setShowOnboarding(true);
+      }, 2000);
+    } else {
+      // All steps completed
+      try {
+        await updateOnboardingStatus({ completed: true });
+        setOnboardingStatus((prev) => ({ ...prev, completed: true }));
+      } catch (error) {
+        console.error("Error completing onboarding:", error);
+      }
+    }
+  };
 
   // Function to trigger loading state for demonstration
   const handleRefresh = () => {
@@ -76,6 +147,14 @@ const Home = () => {
           </div>
         </main>
       </div>
+
+      {/* Onboarding Overlay */}
+      <OnboardingOverlay
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        currentStep={currentOnboardingStep}
+        onStepComplete={handleOnboardingStepComplete}
+      />
     </div>
   );
 };

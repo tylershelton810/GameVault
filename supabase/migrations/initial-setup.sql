@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS public.users (
     updated_at timestamp with time zone,
     email text,
     name text,
-    full_name text
+    full_name text,
+    onboarding_status jsonb DEFAULT '{"games": false, "friends": false, "clubs": false, "completed": false}'::jsonb
 );
 
 -- Add RLS (Row Level Security) policies

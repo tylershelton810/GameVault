@@ -505,6 +505,7 @@ export type Database = {
       notifications: {
         Row: {
           activity_id: string | null
+          club_id: string | null
           created_at: string
           from_user_id: string
           id: string
@@ -515,6 +516,7 @@ export type Database = {
         }
         Insert: {
           activity_id?: string | null
+          club_id?: string | null
           created_at?: string
           from_user_id: string
           id?: string
@@ -525,6 +527,7 @@ export type Database = {
         }
         Update: {
           activity_id?: string | null
+          club_id?: string | null
           created_at?: string
           from_user_id?: string
           id?: string
@@ -574,6 +577,7 @@ export type Database = {
           image: string | null
           name: string | null
           notification_preferences: Json | null
+          onboarding_status: Json | null
           token_identifier: string
           updated_at: string | null
           user_id: string | null
@@ -587,6 +591,7 @@ export type Database = {
           image?: string | null
           name?: string | null
           notification_preferences?: Json | null
+          onboarding_status?: Json | null
           token_identifier: string
           updated_at?: string | null
           user_id?: string | null
@@ -600,6 +605,7 @@ export type Database = {
           image?: string | null
           name?: string | null
           notification_preferences?: Json | null
+          onboarding_status?: Json | null
           token_identifier?: string
           updated_at?: string | null
           user_id?: string | null
