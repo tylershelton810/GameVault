@@ -161,6 +161,18 @@ const GamePage = () => {
   const stableGameId = useMemo(() => gameId, [gameId]);
   const stableUserId = useMemo(() => user?.id, [user?.id]);
 
+  // Memoized image URL generator for better performance
+  const getOptimizedImageUrl = useMemo(() => {
+    return (url: string, size: "small" | "big" = "big") => {
+      if (!url) return null;
+      const sizeMap = {
+        small: "t_cover_small_2x",
+        big: "t_cover_big_2x",
+      };
+      return `https:${url.replace("t_thumb", sizeMap[size])}`;
+    };
+  }, []);
+
   // Fetch game collection data or check if it's a direct IGDB game ID
   const fetchGameCollection = useCallback(async () => {
     if (!stableGameId || !stableUserId) return;
@@ -173,12 +185,16 @@ const GamePage = () => {
         setIgdbGameId(igdbId);
 
         // Check if user already has this game in their collection
-        const { data: existingGame } = await supabase
+        const { data: existingGame, error: existingGameError } = await supabase
           .from("game_collections")
           .select("*")
           .eq("igdb_game_id", igdbId)
           .eq("user_id", stableUserId)
-          .single();
+          .maybeSingle();
+
+        if (existingGameError && existingGameError.code !== "PGRST116") {
+          console.error("Error checking existing game:", existingGameError);
+        }
 
         if (existingGame) {
           setGameCollection(existingGame);
@@ -1046,10 +1062,10 @@ const GamePage = () => {
       <TopNavigation />
       <div className="flex pt-16">
         <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
-        <div className="flex-1">
-          <div className="p-8">
+        <div className="flex-1 overflow-auto">
+          <div className="p-6 max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-4 mb-6">
               <Button
                 variant="ghost"
                 size="sm"
@@ -1067,11 +1083,11 @@ const GamePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column - Game Cover and Basic Info */}
               <div className="lg:col-span-1">
                 <Card className="overflow-hidden">
-                  <div className="aspect-[3/4] relative bg-gray-200 flex items-center justify-center">
+                  <div className="aspect-[3/4] relative bg-gray-200 overflow-hidden">
                     {gameCollection?.game_cover_url ||
                     (gameDetails?.cover?.url &&
                       `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`) ? (
@@ -1081,7 +1097,18 @@ const GamePage = () => {
                           `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`
                         }
                         alt={gameTitle || gameDetails?.name || "Game cover"}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover absolute inset-0"
+                        loading="lazy"
+                        onError={(e) => {
+                          // Fallback to smaller image if high-res fails
+                          const target = e.target as HTMLImageElement;
+                          if (target.src.includes("t_cover_big")) {
+                            target.src = target.src.replace(
+                              "t_cover_big",
+                              "t_cover_big_2x",
+                            );
+                          }
+                        }}
                       />
                     ) : (
                       <div className="text-center">
@@ -1111,7 +1138,7 @@ const GamePage = () => {
                       </>
                     )}
                   </div>
-                  <CardContent className="p-6">
+                  <CardContent className="p-4">
                     {hasUserGame && gameCollection ? (
                       <>
                         <div className="flex items-center justify-between mb-4">
@@ -1160,10 +1187,25 @@ const GamePage = () => {
                                       <img
                                         src={
                                           gameCollection.game_cover_url ||
-                                          `https:${gameDetails?.cover?.url?.replace("t_thumb", "t_cover_small")}`
+                                          `https:${gameDetails?.cover?.url?.replace("t_thumb", "t_cover_small_2x")}`
                                         }
                                         alt={gameCollection.game_title}
                                         className="w-16 h-20 object-cover rounded"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          const target =
+                                            e.target as HTMLImageElement;
+                                          if (
+                                            target.src.includes(
+                                              "t_cover_small_2x",
+                                            )
+                                          ) {
+                                            target.src = target.src.replace(
+                                              "t_cover_small_2x",
+                                              "t_cover_small",
+                                            );
+                                          }
+                                        }}
                                       />
                                       <div className="flex-1">
                                         <h4 className="font-medium">
@@ -1395,12 +1437,12 @@ const GamePage = () => {
                             Add to Your Collection
                           </h3>
                         </div>
-                        <div className="text-center py-8">
-                          <Gamepad2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <h4 className="text-lg font-medium text-card-foreground mb-2">
+                        <div className="text-center py-4">
+                          <Gamepad2 className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                          <h4 className="text-base font-medium text-card-foreground mb-2">
                             Game not in your collection
                           </h4>
-                          <p className="text-muted-foreground mb-6">
+                          <p className="text-sm text-muted-foreground mb-4">
                             Add this game to your collection to track your
                             progress and rate it.
                           </p>
@@ -1435,9 +1477,24 @@ const GamePage = () => {
                                     <div className="flex items-start gap-3">
                                       {gameDetails.cover && (
                                         <img
-                                          src={`https:${gameDetails.cover.url.replace("t_thumb", "t_cover_small")}`}
+                                          src={`https:${gameDetails.cover.url.replace("t_thumb", "t_cover_small_2x")}`}
                                           alt={gameDetails.name}
                                           className="w-16 h-20 object-cover rounded"
+                                          loading="lazy"
+                                          onError={(e) => {
+                                            const target =
+                                              e.target as HTMLImageElement;
+                                            if (
+                                              target.src.includes(
+                                                "t_cover_small_2x",
+                                              )
+                                            ) {
+                                              target.src = target.src.replace(
+                                                "t_cover_small_2x",
+                                                "t_cover_small",
+                                              );
+                                            }
+                                          }}
                                         />
                                       )}
                                       <div className="flex-1">
@@ -1550,12 +1607,12 @@ const GamePage = () => {
               </div>
 
               {/* Right Column - Game Details and Friends */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4">
                 {/* Game Details */}
                 {isLoadingDetails ? (
                   <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-center py-8">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-center py-6">
                         <Loader2 className="w-6 h-6 animate-spin mr-2" />
                         <span className="text-muted-foreground">
                           Loading game details...
@@ -1565,24 +1622,26 @@ const GamePage = () => {
                   </Card>
                 ) : gameDetails ? (
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-lg">
                         <Globe className="w-5 h-5" />
                         Game Details
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <h4 className="font-medium text-card-foreground mb-2">
-                          Summary
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {gameDetails.summary}
-                        </p>
-                      </div>
+                    <CardContent className="space-y-3 pt-0">
+                      {gameDetails.summary && (
+                        <div>
+                          <h4 className="font-medium text-card-foreground mb-2">
+                            Summary
+                          </h4>
+                          <p className="text-sm text-muted-foreground line-clamp-3">
+                            {gameDetails.summary}
+                          </p>
+                        </div>
+                      )}
 
                       {/* Release Date and Age Rating */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {gameDetails.first_release_date && (
                           <div>
                             <h4 className="font-medium text-card-foreground mb-2">
@@ -1669,7 +1728,7 @@ const GamePage = () => {
                       {/* Developer and Publisher */}
                       {gameDetails.involved_companies &&
                         gameDetails.involved_companies.length > 0 && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {(() => {
                               const developers =
                                 gameDetails.involved_companies.filter(
@@ -1727,7 +1786,7 @@ const GamePage = () => {
                           </div>
                         )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {gameDetails.genres &&
                           gameDetails.genres.length > 0 && (
                             <div>
@@ -1781,19 +1840,19 @@ const GamePage = () => {
 
                 {/* Friends Section */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
                       <Users className="w-5 h-5" />
                       Friends with this Game ({friendsData.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     {friendsData.length > 0 ? (
-                      <div className="space-y-4">
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
                         {friendsData.map((friend) => (
                           <div
                             key={friend.id}
-                            className="border rounded-lg p-4"
+                            className="border rounded-lg p-3"
                           >
                             <div className="flex items-start gap-3">
                               <Avatar className="h-10 w-10">
@@ -1869,12 +1928,12 @@ const GamePage = () => {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-card-foreground mb-2">
+                      <div className="text-center py-6">
+                        <Users className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                        <h3 className="text-base font-medium text-card-foreground mb-2">
                           No friends have this game yet
                         </h3>
-                        <p className="text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           Be the first among your friends to discover this game!
                         </p>
                       </div>
