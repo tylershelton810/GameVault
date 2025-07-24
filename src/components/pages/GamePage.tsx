@@ -1264,24 +1264,32 @@ const GamePage = () => {
                                     </SelectContent>
                                   </Select>
 
-                                  <div className="flex items-center space-x-4">
-                                    <div className="flex items-center space-x-2">
+                                  <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+                                    <div className="flex items-center space-x-2 flex-shrink-0">
                                       <Checkbox
                                         id="edit-completed"
                                         checked={isCompleted}
                                         onCheckedChange={setIsCompleted}
+                                        className="flex-shrink-0"
                                       />
-                                      <Label htmlFor="edit-completed">
+                                      <Label
+                                        htmlFor="edit-completed"
+                                        className="flex-shrink-0"
+                                      >
                                         Completed
                                       </Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-2 flex-shrink-0">
                                       <Checkbox
                                         id="edit-favorite"
                                         checked={isFavorite}
                                         onCheckedChange={setIsFavorite}
+                                        className="flex-shrink-0"
                                       />
-                                      <Label htmlFor="edit-favorite">
+                                      <Label
+                                        htmlFor="edit-favorite"
+                                        className="flex-shrink-0"
+                                      >
                                         Favorite
                                       </Label>
                                     </div>
@@ -1574,22 +1582,34 @@ const GamePage = () => {
                                   </SelectContent>
                                 </Select>
 
-                                <div className="flex items-center space-x-4">
-                                  <div className="flex items-center space-x-2">
+                                <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+                                  <div className="flex items-center space-x-2 flex-shrink-0">
                                     <Checkbox
                                       id="completed"
                                       checked={isCompleted}
                                       onCheckedChange={setIsCompleted}
+                                      className="size-4 flex-shrink-0"
                                     />
-                                    <Label htmlFor="completed">Completed</Label>
+                                    <Label
+                                      htmlFor="completed"
+                                      className="flex-shrink-0"
+                                    >
+                                      Completed
+                                    </Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
+                                  <div className="flex items-center space-x-2 flex-shrink-0">
                                     <Checkbox
                                       id="favorite"
                                       checked={isFavorite}
                                       onCheckedChange={setIsFavorite}
+                                      className="flex-shrink-0"
                                     />
-                                    <Label htmlFor="favorite">Favorite</Label>
+                                    <Label
+                                      htmlFor="favorite"
+                                      className="flex-shrink-0"
+                                    >
+                                      Favorite
+                                    </Label>
                                   </div>
                                 </div>
 
