@@ -479,15 +479,30 @@ const Friends = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      playing: { label: "Playing", className: "bg-green-100 text-green-800" },
-      played: { label: "Played", className: "bg-blue-100 text-blue-800" },
+      playing: {
+        label: "Playing",
+        className:
+          "bg-green-100 text-green-800 hover:bg-green-200 transition-colors duration-200",
+      },
+      played: {
+        label: "Played",
+        className:
+          "bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-200",
+      },
       "want-to-play": {
         label: "Want to Play",
-        className: "bg-yellow-100 text-yellow-800",
+        className:
+          "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors duration-200",
       },
     };
     const config = statusConfig[status as keyof typeof statusConfig];
-    return <Badge className={config.className}>{config.label}</Badge>;
+    return (
+      <Badge
+        className={`${config.className} hover:scale-105 transform transition-all duration-200`}
+      >
+        {config.label}
+      </Badge>
+    );
   };
 
   const renderStars = (rating: number) => {
@@ -535,11 +550,12 @@ const Friends = () => {
             isOpen={isSidebarOpen}
             onOpenChange={setIsSidebarOpen}
           />
-          <div className="flex-1 w-full md:w-auto">
-            <div className="p-4 md:p-8">
-              <div className="flex items-center gap-4 mb-8">
+          <div className="flex-1 w-full md:w-auto max-w-7xl mx-auto">
+            <div className="p-4 md:p-6">
+              <div className="flex items-center gap-4 mb-8 animate-slide-up">
                 <Button
                   variant="outline"
+                  className="hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-primary/10 hover:border-primary/30"
                   onClick={() => {
                     setIsViewingFriend(false);
                     setSelectedFriend(null);
@@ -549,8 +565,8 @@ const Friends = () => {
                 >
                   ← Back to Friends
                 </Button>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
+                <div className="flex items-center gap-3 animate-fade-in">
+                  <Avatar className="h-12 w-12 ring-2 ring-border hover:ring-primary/40 transition-all duration-300">
                     <AvatarImage
                       src={
                         selectedFriend.avatar_url ||
@@ -558,15 +574,15 @@ const Friends = () => {
                       }
                       alt={selectedFriend.full_name}
                     />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white">
                       {selectedFriend.full_name[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                       {selectedFriend.full_name}'s Games
                     </h1>
-                    <p className="text-gray-600">
+                    <p className="text-muted-foreground">
                       {selectedFriend.gameCount} games • Average rating:{" "}
                       {selectedFriend.averageRating.toFixed(1)}/10
                     </p>
@@ -574,7 +590,7 @@ const Friends = () => {
                 </div>
               </div>
 
-              <div className="mb-6">
+              <div className="mb-6 animate-fade-in">
                 <SearchSortFilter
                   searchValue={friendGamesSearchTerm}
                   onSearchChange={setFriendGamesSearchTerm}
@@ -593,6 +609,7 @@ const Friends = () => {
                   ]}
                   showFilter={true}
                   onFilterClick={() => {}}
+                  className="transition-all duration-200 hover:shadow-md"
                 />
               </div>
 
@@ -647,11 +664,15 @@ const Friends = () => {
                   );
 
                   return sortedFriendGames.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
-                      {sortedFriendGames.map((game) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                      {sortedFriendGames.map((game, index) => (
                         <Card
                           key={game.id}
-                          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:-translate-y-2 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm border-2 hover:border-primary/30"
+                          style={{
+                            animationDelay: `${index * 0.1}s`,
+                            animation: "slide-up 0.6s ease-out forwards",
+                          }}
                           onClick={async () => {
                             // Check if current user has this game in their library
                             const { data: userGameCollection } = await supabase
@@ -669,68 +690,63 @@ const Friends = () => {
                             }
                           }}
                         >
-                          <div className="aspect-[3/4] relative">
+                          <div className="aspect-[3/4] relative overflow-hidden">
                             <img
                               src={game.cover}
                               alt={game.title}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             <div className="absolute top-2 left-2 flex gap-1">
+                              {getStatusBadge(game.status)}
                               {game.isFavorite && (
-                                <div className="bg-red-500 rounded-full p-1">
+                                <div className="bg-red-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg">
                                   <Heart className="w-3 h-3 text-white fill-white" />
                                 </div>
                               )}
                               {game.isCompleted && (
-                                <div className="bg-green-500 rounded-full p-1">
+                                <div
+                                  className="bg-green-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg"
+                                  style={{ animationDelay: "0.1s" }}
+                                >
                                   <CheckCircle className="w-3 h-3 text-white" />
                                 </div>
                               )}
                               {game.hasReview && (
-                                <div className="bg-purple-500 rounded-full p-1">
+                                <div
+                                  className="bg-purple-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg"
+                                  style={{ animationDelay: "0.2s" }}
+                                >
                                   <MessageSquare className="w-3 h-3 text-white" />
                                 </div>
                               )}
                               {game.notes && game.notes.trim() && (
-                                <div className="bg-orange-500 rounded-full p-1">
+                                <div
+                                  className="bg-orange-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg"
+                                  style={{ animationDelay: "0.3s" }}
+                                >
                                   <FileText className="w-3 h-3 text-white" />
                                 </div>
                               )}
                             </div>
                           </div>
-                          <CardContent className="p-4">
-                            <h3 className="font-semibold text-sm mb-3 line-clamp-2">
+                          <CardContent className="p-3 transition-all duration-300 flex flex-col">
+                            <h3 className="font-semibold text-sm mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-300">
                               {game.title}
                             </h3>
-                            <div className="space-y-2">
+                            <div className="space-y-2 flex-1">
                               {/* Friend's rating */}
-                              <div className="bg-muted p-2 rounded-lg border border-border">
-                                <div className="flex items-center justify-between text-xs">
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-5 w-5">
-                                      <AvatarImage
-                                        src={
-                                          selectedFriend.avatar_url ||
-                                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedFriend.email}`
-                                        }
-                                        alt={selectedFriend.full_name}
-                                      />
-                                      <AvatarFallback>
-                                        {selectedFriend.full_name[0]}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-primary font-medium">
-                                      {selectedFriend.full_name}
+                              <div className="bg-muted/50 backdrop-blur-sm p-2 rounded-lg border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-md">
+                                <div className="text-xs text-left">
+                                  {game.personalRating ? (
+                                    <span className="text-primary font-medium group-hover:text-purple-600 transition-colors duration-300">
+                                      Rating: {game.personalRating}/10
                                     </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    {game.personalRating && (
-                                      <span className="text-primary font-medium">
-                                        {game.personalRating}/10
-                                      </span>
-                                    )}
-                                    {getStatusBadge(game.status)}
-                                  </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">
+                                      Rating: Not rated
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <p className="text-xs text-muted-foreground">
@@ -743,18 +759,25 @@ const Friends = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-16">
-                      <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-foreground mb-2">
-                        {friendGamesSearchTerm
-                          ? "No games found"
-                          : "No games yet"}
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {friendGamesSearchTerm
-                          ? `No games match "${friendGamesSearchTerm}"`
-                          : `${selectedFriend.full_name} hasn't added any games to their library yet.`}
-                      </p>
+                    <div className="text-center py-16 animate-fade-in">
+                      <div className="mb-6">
+                        <div className="text-6xl mb-4 animate-bounce-gentle">
+                          🎮
+                        </div>
+                        <h3 className="text-xl font-semibold text-foreground mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                          {friendGamesSearchTerm
+                            ? "No games found"
+                            : "No games yet"}
+                        </h3>
+                        <p
+                          className="text-muted-foreground animate-fade-in"
+                          style={{ animationDelay: "0.2s" }}
+                        >
+                          {friendGamesSearchTerm
+                            ? `No games match "${friendGamesSearchTerm}"`
+                            : `${selectedFriend.full_name} hasn't added any games to their library yet.`}
+                        </p>
+                      </div>
                     </div>
                   );
                 })()
@@ -781,21 +804,21 @@ const Friends = () => {
           onOpenChange={setIsSidebarOpen}
         />
         <div className="flex-1 w-full md:w-auto">
-          <div className="p-4 md:p-8">
-            <div className="flex justify-between items-center mb-8">
+          <div className="max-w-6xl mx-auto p-4 md:p-6">
+            <div className="flex justify-between items-center mb-8 animate-slide-up">
               <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                  Friends
+                <h1 className="text-3xl font-bold text-foreground mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                  👥 Friends
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground animate-fade-in">
                   Connect with friends and discover new games together
                 </p>
               </div>
 
               <Dialog open={isAddFriendOpen} onOpenChange={setIsAddFriendOpen}>
                 <DialogTrigger asChild>
-                  <Button>
-                    <UserPlus className="w-4 h-4 mr-2" />
+                  <Button className="hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary">
+                    <UserPlus className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:rotate-12" />
                     Add Friend
                   </Button>
                 </DialogTrigger>
@@ -863,8 +886,8 @@ const Friends = () => {
               </Dialog>
             </div>
 
-            {activeTab === "shared" && (
-              <div className="mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 animate-fade-in">
+              {activeTab === "shared" ? (
                 <SearchSortFilter
                   searchValue={sharedGamesSearchTerm}
                   onSearchChange={setSharedGamesSearchTerm}
@@ -882,39 +905,45 @@ const Friends = () => {
                   ]}
                   showFilter={true}
                   onFilterClick={() => {}}
+                  className="transition-all duration-200 hover:shadow-md flex-1"
                 />
-              </div>
-            )}
-
-            {activeTab !== "shared" && (
-              <div className="mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              ) : (
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 transition-colors duration-200" />
                   <Input
                     placeholder="Search friends..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 transition-all duration-200 focus:ring-2 focus:ring-primary/20 hover:shadow-md"
                   />
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              className="w-full"
+              className="w-full animate-scale-in"
             >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="friends">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/50 backdrop-blur-sm">
+                <TabsTrigger
+                  value="friends"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600"
+                >
                   My Friends (
                   {friends.filter((f) => f.status === "accepted").length})
                 </TabsTrigger>
-                <TabsTrigger value="requests">
+                <TabsTrigger
+                  value="requests"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600"
+                >
                   Requests (
                   {friends.filter((f) => f.status === "requested").length})
                 </TabsTrigger>
-                <TabsTrigger value="shared">
+                <TabsTrigger
+                  value="shared"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600"
+                >
                   Shared Games ({sharedGames.length})
                 </TabsTrigger>
               </TabsList>
@@ -930,20 +959,25 @@ const Friends = () => {
                 ) : filteredFriends.filter(
                     (f) => f.status === "accepted" || f.status === "pending",
                   ).length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {filteredFriends
                       .filter(
                         (f) =>
                           f.status === "accepted" || f.status === "pending",
                       )
-                      .map((friend) => (
+                      .map((friend, index) => (
                         <Card
                           key={friend.id}
-                          className="hover:shadow-lg transition-shadow"
+                          className="hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:-translate-y-2 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm border-2 hover:border-primary/30"
+                          style={{
+                            animationDelay: `${index * 0.1}s`,
+                            animation: "slide-up 0.6s ease-out forwards",
+                          }}
                         >
-                          <CardHeader className="pb-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-12 w-12">
+                          <CardHeader className="pb-3 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="flex items-center gap-3 relative z-10">
+                              <Avatar className="h-12 w-12 ring-2 ring-border group-hover:ring-primary/40 transition-all duration-300 group-hover:scale-110">
                                 <AvatarImage
                                   src={
                                     friend.avatar_url ||
@@ -951,62 +985,68 @@ const Friends = () => {
                                   }
                                   alt={friend.full_name}
                                 />
-                                <AvatarFallback>
+                                <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white">
                                   {friend.full_name[0]}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <CardTitle className="text-lg text-foreground truncate">
+                                <CardTitle className="text-lg text-foreground truncate group-hover:text-primary transition-colors duration-300">
                                   {friend.full_name}
                                 </CardTitle>
                                 <p className="text-sm text-muted-foreground truncate min-w-0">
                                   {friend.email}
                                 </p>
                                 {friend.status === "pending" && (
-                                  <Badge variant="outline" className="mt-1">
+                                  <Badge
+                                    variant="outline"
+                                    className="mt-1 animate-bounce-in bg-yellow-100 text-yellow-800 border-yellow-300"
+                                  >
                                     Request Sent
                                   </Badge>
                                 )}
                               </div>
                             </div>
                           </CardHeader>
-                          <CardContent>
+                          <CardContent className="relative p-3">
                             <div className="space-y-3">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">
-                                  Games:
-                                </span>
-                                <span className="font-medium text-foreground">
-                                  {friend.gameCount}
-                                </span>
-                              </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">
-                                  Avg Rating:
-                                </span>
-                                <span className="font-medium text-foreground">
-                                  {friend.averageRating > 0
-                                    ? `${friend.averageRating.toFixed(1)}/10`
-                                    : "N/A"}
-                                </span>
+                              <div className="bg-muted/30 backdrop-blur-sm p-3 rounded-lg border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-md">
+                                <div className="flex justify-between text-sm mb-2">
+                                  <span className="text-muted-foreground">
+                                    Games:
+                                  </span>
+                                  <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-300">
+                                    {friend.gameCount}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    Avg Rating:
+                                  </span>
+                                  <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-300">
+                                    {friend.averageRating > 0
+                                      ? `${friend.averageRating.toFixed(1)}/10`
+                                      : "N/A"}
+                                  </span>
+                                </div>
                               </div>
                               {friend.status === "accepted" && (
                                 <div className="flex gap-2 pt-2">
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="flex-1"
+                                    className="flex-1 hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-primary/10 hover:border-primary/30"
                                     onClick={() => viewFriendGames(friend)}
                                   >
-                                    <Eye className="w-4 h-4 mr-1" />
+                                    <Eye className="w-4 h-4 mr-1 transition-transform duration-200 group-hover:scale-110" />
                                     View Games
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="outline"
+                                    className="hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive"
                                     onClick={() => removeFriend(friend.id)}
                                   >
-                                    <UserMinus className="w-4 h-4" />
+                                    <UserMinus className="w-4 h-4 transition-transform duration-200 hover:scale-110" />
                                   </Button>
                                 </div>
                               )}
@@ -1016,16 +1056,27 @@ const Friends = () => {
                       ))}
                   </div>
                 ) : (
-                  <div className="text-center py-16">
-                    <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      No friends yet
-                    </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Start building your gaming network by adding friends!
-                    </p>
-                    <Button onClick={() => setIsAddFriendOpen(true)}>
-                      <UserPlus className="w-4 h-4 mr-2" />
+                  <div className="text-center py-16 animate-fade-in">
+                    <div className="mb-6">
+                      <div className="text-6xl mb-4 animate-bounce-gentle">
+                        👥
+                      </div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                        Your friend list is looking a bit lonely!
+                      </h3>
+                      <p
+                        className="text-muted-foreground mb-6 animate-fade-in"
+                        style={{ animationDelay: "0.2s" }}
+                      >
+                        Start building your gaming network by adding friends!
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setIsAddFriendOpen(true)}
+                      className="animate-bounce-in hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary"
+                      style={{ animationDelay: "0.4s" }}
+                    >
+                      <UserPlus className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:rotate-12" />
                       Add your first friend
                     </Button>
                   </div>
@@ -1034,17 +1085,22 @@ const Friends = () => {
 
               <TabsContent value="requests" className="mt-6">
                 {friends.filter((f) => f.status === "requested").length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {friends
                       .filter((f) => f.status === "requested")
-                      .map((friend) => (
+                      .map((friend, index) => (
                         <Card
                           key={friend.id}
-                          className="hover:shadow-lg transition-shadow"
+                          className="hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:-translate-y-2 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm border-2 hover:border-blue-500/30"
+                          style={{
+                            animationDelay: `${index * 0.1}s`,
+                            animation: "slide-up 0.6s ease-out forwards",
+                          }}
                         >
-                          <CardHeader className="pb-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-12 w-12">
+                          <CardHeader className="pb-3 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="flex items-center gap-3 relative z-10">
+                              <Avatar className="h-12 w-12 ring-2 ring-border group-hover:ring-blue-500/40 transition-all duration-300 group-hover:scale-110">
                                 <AvatarImage
                                   src={
                                     friend.avatar_url ||
@@ -1052,37 +1108,39 @@ const Friends = () => {
                                   }
                                   alt={friend.full_name}
                                 />
-                                <AvatarFallback>
+                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
                                   {friend.full_name[0]}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <CardTitle className="text-lg text-foreground truncate">
+                                <CardTitle className="text-lg text-foreground truncate group-hover:text-blue-600 transition-colors duration-300">
                                   {friend.full_name}
                                 </CardTitle>
                                 <p className="text-sm text-muted-foreground truncate min-w-0">
                                   {friend.email}
                                 </p>
-                                <Badge className="mt-1 bg-blue-100 text-blue-800">
+                                <Badge className="mt-1 bg-blue-100 text-blue-800 animate-bounce-in border-blue-300">
                                   Friend Request
                                 </Badge>
                               </div>
                             </div>
                           </CardHeader>
-                          <CardContent>
+                          <CardContent className="relative p-3">
                             <div className="space-y-3">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">
-                                  Games:
-                                </span>
-                                <span className="font-medium text-foreground">
-                                  {friend.gameCount}
-                                </span>
+                              <div className="bg-muted/30 backdrop-blur-sm p-3 rounded-lg border border-border/50 hover:border-blue-500/30 transition-all duration-300 hover:shadow-md">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    Games:
+                                  </span>
+                                  <span className="font-medium text-foreground group-hover:text-blue-600 transition-colors duration-300">
+                                    {friend.gameCount}
+                                  </span>
+                                </div>
                               </div>
                               <div className="flex gap-2 pt-2">
                                 <Button
                                   size="sm"
-                                  className="flex-1"
+                                  className="flex-1 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-emerald-600 hover:to-green-500"
                                   onClick={() => acceptFriendRequest(friend.id)}
                                 >
                                   Accept
@@ -1090,6 +1148,7 @@ const Friends = () => {
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  className="hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive"
                                   onClick={() => removeFriend(friend.id)}
                                 >
                                   Decline
@@ -1101,13 +1160,21 @@ const Friends = () => {
                       ))}
                   </div>
                 ) : (
-                  <div className="text-center py-16">
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      No friend requests
-                    </h3>
-                    <p className="text-muted-foreground">
-                      You don't have any pending friend requests.
-                    </p>
+                  <div className="text-center py-16 animate-fade-in">
+                    <div className="mb-6">
+                      <div className="text-6xl mb-4 animate-bounce-gentle">
+                        📬
+                      </div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2 bg-gradient-to-r from-blue-500 to-cyan-600 bg-clip-text text-transparent">
+                        No friend requests
+                      </h3>
+                      <p
+                        className="text-muted-foreground animate-fade-in"
+                        style={{ animationDelay: "0.2s" }}
+                      >
+                        You don't have any pending friend requests.
+                      </p>
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -1163,11 +1230,15 @@ const Friends = () => {
                     );
 
                     return sortedSharedGames.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
-                        {sortedSharedGames.map((game) => (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 max-w-7xl mx-auto">
+                        {sortedSharedGames.map((game, index) => (
                           <Card
                             key={game.igdb_game_id}
-                            className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                            className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:-translate-y-2 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm border-2 hover:border-green-500/30"
+                            style={{
+                              animationDelay: `${index * 0.1}s`,
+                              animation: "slide-up 0.6s ease-out forwards",
+                            }}
                             onClick={async () => {
                               // Check if user has this game in their library
                               const { data: userGameCollection } =
@@ -1205,74 +1276,66 @@ const Friends = () => {
                               }
                             }}
                           >
-                            <div className="aspect-[3/4] relative">
+                            <div className="aspect-[3/4] relative overflow-hidden">
                               <img
                                 src={game.game_cover_url}
                                 alt={game.game_title}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                               />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                               <div className="absolute top-2 left-2 flex gap-1">
+                                {getStatusBadge(game.userStatus)}
                                 {game.userIsFavorite && (
-                                  <div className="bg-red-500 rounded-full p-1">
+                                  <div className="bg-red-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg">
                                     <Heart className="w-3 h-3 text-white fill-white" />
                                   </div>
                                 )}
                                 {game.userIsCompleted && (
-                                  <div className="bg-green-500 rounded-full p-1">
+                                  <div
+                                    className="bg-green-500/90 backdrop-blur-sm rounded-full p-1 animate-bounce-in shadow-lg"
+                                    style={{ animationDelay: "0.1s" }}
+                                  >
                                     <CheckCircle className="w-3 h-3 text-white" />
                                   </div>
                                 )}
                               </div>
                             </div>
-                            <CardContent className="p-4">
-                              <h3 className="font-semibold text-sm mb-3 line-clamp-2">
+                            <CardContent className="p-3 transition-all duration-300 flex flex-col">
+                              <h3 className="font-semibold text-sm mb-3 line-clamp-2 group-hover:text-green-600 transition-colors duration-300">
                                 {game.game_title}
                               </h3>
-                              <div className="space-y-2">
+                              <div className="space-y-2 flex-1">
                                 {/* Your rating */}
-                                <div className="bg-muted p-2 rounded-lg border border-border">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-2">
-                                      <Avatar className="h-5 w-5">
-                                        <AvatarImage
-                                          src={
-                                            user?.user_metadata?.avatar_url ||
-                                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
-                                          }
-                                          alt="You"
-                                        />
-                                        <AvatarFallback className="text-[8px]">
-                                          {(user?.user_metadata?.full_name ||
-                                            user?.email ||
-                                            "Y")[0].toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-primary font-medium">
-                                        You
+                                <div className="bg-muted/50 backdrop-blur-sm p-2 rounded-lg border border-border/50 hover:border-green-500/30 transition-all duration-300 hover:shadow-md">
+                                  <div className="text-xs text-left">
+                                    {game.userRating ? (
+                                      <span className="text-primary font-medium group-hover:text-green-600 transition-colors duration-300">
+                                        Your Rating: {game.userRating}/10
                                       </span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      {game.userRating && (
-                                        <span className="text-primary font-medium">
-                                          {game.userRating}/10
-                                        </span>
-                                      )}
-                                      {getStatusBadge(game.userStatus)}
-                                    </div>
+                                    ) : (
+                                      <span className="text-muted-foreground">
+                                        Your Rating: Not rated
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
 
-                                <p className="text-xs text-muted-foreground font-medium">
+                                <p className="text-xs text-muted-foreground font-medium mb-2">
                                   Shared with {game.friends.length} friend
                                   {game.friends.length > 1 ? "s" : ""}:
                                 </p>
-                                {game.friends.map((friend, index) => (
-                                  <div
-                                    key={index}
-                                    className="flex items-center justify-between text-xs"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <Avatar className="h-5 w-5">
+                                <div className="space-y-1">
+                                  {game.friends.map((friend, friendIndex) => (
+                                    <div
+                                      key={friendIndex}
+                                      className="flex items-center gap-2 text-xs hover:bg-accent/30 p-1 rounded transition-all duration-200"
+                                      style={{
+                                        animationDelay: `${friendIndex * 0.1}s`,
+                                        animation:
+                                          "fade-in 0.4s ease-out forwards",
+                                      }}
+                                    >
+                                      <Avatar className="h-5 w-5 ring-1 ring-border hover:ring-2 hover:ring-green-500/40 transition-all duration-300">
                                         <AvatarImage
                                           src={
                                             friend.avatar_url ||
@@ -1280,47 +1343,38 @@ const Friends = () => {
                                           }
                                           alt={friend.name}
                                         />
-                                        <AvatarFallback className="text-[8px]">
+                                        <AvatarFallback className="text-[8px] bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
                                           {friend.name[0]}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <span className="text-foreground">
+                                      <span className="text-foreground hover:text-green-600 transition-colors duration-300 truncate flex-1">
                                         {friend.name}
                                       </span>
-                                      <div className="flex gap-1">
-                                        {friend.isFavorite && (
-                                          <Heart className="w-3 h-3 text-red-500 fill-red-500" />
-                                        )}
-                                        {friend.isCompleted && (
-                                          <CheckCircle className="w-3 h-3 text-green-500" />
-                                        )}
-                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                      {friend.rating && (
-                                        <span className="text-muted-foreground">
-                                          {friend.rating}/10
-                                        </span>
-                                      )}
-                                      {getStatusBadge(friend.status)}
-                                    </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
                             </CardContent>
                           </Card>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-16">
-                        <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-foreground mb-2">
-                          No shared games
-                        </h3>
-                        <p className="text-muted-foreground">
-                          You don't have any games in common with your friends
-                          yet.
-                        </p>
+                      <div className="text-center py-16 animate-fade-in">
+                        <div className="mb-6">
+                          <div className="text-6xl mb-4 animate-bounce-gentle">
+                            🎮
+                          </div>
+                          <h3 className="text-xl font-semibold text-foreground mb-2 bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
+                            No shared games yet!
+                          </h3>
+                          <p
+                            className="text-muted-foreground animate-fade-in"
+                            style={{ animationDelay: "0.2s" }}
+                          >
+                            You don't have any games in common with your friends
+                            yet.
+                          </p>
+                        </div>
                       </div>
                     );
                   })()
