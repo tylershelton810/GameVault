@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 import {
   Star,
@@ -438,8 +437,8 @@ const Discover = () => {
           isOpen={isSidebarOpen}
           onOpenChange={setIsSidebarOpen}
         />
-        <div className="flex-1 w-full md:w-auto">
-          <div className="p-4 md:p-8">
+        <div className="flex-1 w-full md:w-auto max-w-7xl mx-auto">
+          <div className="p-4 md:p-6 lg:p-8">
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-2">
                 <Compass className="w-8 h-8 text-primary" />
@@ -499,88 +498,85 @@ const Discover = () => {
                           </div>
                         </div>
                       </div>
-                      <ScrollArea className="w-full">
-                        <div className="flex gap-4 pb-4">
-                          {recommendation.similarGames.map((game) => (
-                            <Card
-                              key={game.id}
-                              className="flex-shrink-0 w-48 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                              onClick={async () => {
-                                console.log(
-                                  "Recommendation onClick - game:",
-                                  game,
-                                );
-                                console.log(
-                                  "Recommendation onClick - user:",
-                                  user,
-                                );
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                        {recommendation.similarGames.map((game) => (
+                          <Card
+                            key={game.id}
+                            className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                            onClick={async () => {
+                              console.log(
+                                "Recommendation onClick - game:",
+                                game,
+                              );
+                              console.log(
+                                "Recommendation onClick - user:",
+                                user,
+                              );
 
-                                // Check if user has this game in their library
-                                const {
-                                  data: userGameCollection,
-                                  error: userError,
-                                } = await supabase
-                                  .from("game_collections")
-                                  .select("id")
-                                  .eq("user_id", user?.id)
-                                  .eq("igdb_game_id", game.id)
-                                  .single();
+                              // Check if user has this game in their library
+                              const {
+                                data: userGameCollection,
+                                error: userError,
+                              } = await supabase
+                                .from("game_collections")
+                                .select("id")
+                                .eq("user_id", user?.id)
+                                .eq("igdb_game_id", game.id)
+                                .single();
 
-                                if (userGameCollection) {
-                                  console.log(
-                                    "Navigating to user game:",
-                                    userGameCollection.id,
-                                  );
-                                  navigate(`/game/${userGameCollection.id}`);
-                                } else {
-                                  console.log(
-                                    "Navigating with IGDB ID:",
-                                    game.id,
-                                  );
-                                  navigate(`/game/igdb-${game.id}`);
+                              if (userGameCollection) {
+                                console.log(
+                                  "Navigating to user game:",
+                                  userGameCollection.id,
+                                );
+                                navigate(`/game/${userGameCollection.id}`);
+                              } else {
+                                console.log(
+                                  "Navigating with IGDB ID:",
+                                  game.id,
+                                );
+                                navigate(`/game/igdb-${game.id}`);
+                              }
+                            }}
+                          >
+                            <div className="aspect-[3/4] relative">
+                              <img
+                                src={
+                                  game.cover?.url
+                                    ? `https:${game.cover.url.replace("t_thumb", "t_cover_big")}`
+                                    : "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&q=80"
                                 }
-                              }}
-                            >
-                              <div className="aspect-[3/4] relative">
-                                <img
-                                  src={
-                                    game.cover?.url
-                                      ? `https:${game.cover.url.replace("t_thumb", "t_cover_big")}`
-                                      : "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&q=80"
-                                  }
-                                  alt={game.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <CardContent className="p-3">
-                                <h4 className="font-semibold text-xs mb-2 line-clamp-2 text-foreground">
-                                  {game.name}
-                                </h4>
-                                {game.genres && game.genres.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mb-2">
-                                    {game.genres.slice(0, 2).map((genre) => (
-                                      <Badge
-                                        key={genre.name}
-                                        className="text-[8px] px-1 py-0 bg-muted text-muted-foreground"
-                                      >
-                                        {genre.name}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
-                                {game.summary && (
-                                  <p className="text-[10px] text-muted-foreground line-clamp-3">
-                                    {game.summary.length > 80
-                                      ? `${game.summary.substring(0, 80)}...`
-                                      : game.summary}
-                                  </p>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                        <ScrollBar orientation="horizontal" />
-                      </ScrollArea>
+                                alt={game.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <CardContent className="p-3">
+                              <h4 className="font-semibold text-xs mb-2 line-clamp-2 text-foreground">
+                                {game.name}
+                              </h4>
+                              {game.genres && game.genres.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                  {game.genres.slice(0, 2).map((genre) => (
+                                    <Badge
+                                      key={genre.name}
+                                      className="text-[8px] px-1 py-0 bg-muted text-muted-foreground"
+                                    >
+                                      {genre.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {game.summary && (
+                                <p className="text-[10px] text-muted-foreground line-clamp-3">
+                                  {game.summary.length > 80
+                                    ? `${game.summary.substring(0, 80)}...`
+                                    : game.summary}
+                                </p>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -621,217 +617,212 @@ const Discover = () => {
                   </span>
                 </div>
               ) : trendingGames.length > 0 ? (
-                <ScrollArea className="w-full">
-                  <div className="flex gap-4 pb-4">
-                    {trendingGames.map((game) => (
-                      <Card
-                        key={game.igdb_game_id}
-                        className="flex-shrink-0 w-48 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={async () => {
-                          console.log("Discover onClick - game:", game);
-                          console.log("Discover onClick - user:", user);
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                  {trendingGames.map((game) => (
+                    <Card
+                      key={game.igdb_game_id}
+                      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={async () => {
+                        console.log("Discover onClick - game:", game);
+                        console.log("Discover onClick - user:", user);
 
-                          // Check if user has this game in their library
-                          if (game.userStatus !== "not-in-library") {
-                            // Find the user's game collection ID for this IGDB game
-                            const {
-                              data: userGameCollection,
-                              error: userError,
-                            } = await supabase
+                        // Check if user has this game in their library
+                        if (game.userStatus !== "not-in-library") {
+                          // Find the user's game collection ID for this IGDB game
+                          const { data: userGameCollection, error: userError } =
+                            await supabase
                               .from("game_collections")
                               .select("id")
                               .eq("user_id", user?.id)
                               .eq("igdb_game_id", game.igdb_game_id)
                               .single();
 
-                            console.log(
-                              "User game collection:",
-                              userGameCollection,
-                              "Error:",
-                              userError,
-                            );
+                          console.log(
+                            "User game collection:",
+                            userGameCollection,
+                            "Error:",
+                            userError,
+                          );
 
-                            if (userGameCollection) {
-                              console.log(
-                                "Navigating to user game:",
-                                userGameCollection.id,
-                              );
-                              navigate(`/game/${userGameCollection.id}`);
-                              return;
-                            }
+                          if (userGameCollection) {
+                            console.log(
+                              "Navigating to user game:",
+                              userGameCollection.id,
+                            );
+                            navigate(`/game/${userGameCollection.id}`);
+                            return;
                           }
+                        }
 
-                          // User doesn't have this game, find any friend's game collection ID for this specific game
-                          let foundGameCollection = null;
+                        // User doesn't have this game, find any friend's game collection ID for this specific game
+                        let foundGameCollection = null;
 
-                          for (const friend of game.friends) {
-                            const {
-                              data: friendGameCollection,
-                              error: friendError,
-                            } = await supabase
-                              .from("game_collections")
-                              .select("id")
-                              .eq("user_id", friend.id)
-                              .eq("igdb_game_id", game.igdb_game_id)
-                              .single();
+                        for (const friend of game.friends) {
+                          const {
+                            data: friendGameCollection,
+                            error: friendError,
+                          } = await supabase
+                            .from("game_collections")
+                            .select("id")
+                            .eq("user_id", friend.id)
+                            .eq("igdb_game_id", game.igdb_game_id)
+                            .single();
 
-                            console.log(
-                              `Friend ${friend.name} game collection:`,
-                              friendGameCollection,
-                              "Error:",
-                              friendError,
-                            );
+                          console.log(
+                            `Friend ${friend.name} game collection:`,
+                            friendGameCollection,
+                            "Error:",
+                            friendError,
+                          );
 
-                            if (friendGameCollection) {
-                              foundGameCollection = friendGameCollection;
-                              break;
-                            }
+                          if (friendGameCollection) {
+                            foundGameCollection = friendGameCollection;
+                            break;
                           }
+                        }
 
-                          if (foundGameCollection) {
-                            console.log(
-                              "Navigating to friend game:",
-                              foundGameCollection.id,
-                            );
-                            navigate(`/game/${foundGameCollection.id}`);
-                          } else {
-                            console.log(
-                              "No game collection found, navigating with IGDB ID:",
-                              game.igdb_game_id,
-                            );
-                            navigate(`/game/${game.igdb_game_id}`);
-                          }
-                        }}
-                      >
-                        <div className="aspect-[3/4] relative">
-                          <img
-                            src={game.game_cover_url}
-                            alt={game.game_title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute top-1 left-1 flex gap-1">
-                            {game.userIsFavorite && (
-                              <div className="bg-red-500 rounded-full p-0.5">
-                                <Heart className="w-2.5 h-2.5 text-white fill-white" />
+                        if (foundGameCollection) {
+                          console.log(
+                            "Navigating to friend game:",
+                            foundGameCollection.id,
+                          );
+                          navigate(`/game/${foundGameCollection.id}`);
+                        } else {
+                          console.log(
+                            "No game collection found, navigating with IGDB ID:",
+                            game.igdb_game_id,
+                          );
+                          navigate(`/game/${game.igdb_game_id}`);
+                        }
+                      }}
+                    >
+                      <div className="aspect-[3/4] relative">
+                        <img
+                          src={game.game_cover_url}
+                          alt={game.game_title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-1 left-1 flex gap-1">
+                          {game.userIsFavorite && (
+                            <div className="bg-red-500 rounded-full p-0.5">
+                              <Heart className="w-2.5 h-2.5 text-white fill-white" />
+                            </div>
+                          )}
+                          {game.userIsCompleted && (
+                            <div className="bg-green-500 rounded-full p-0.5">
+                              <CheckCircle className="w-2.5 h-2.5 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <CardContent className="p-3">
+                        <h3 className="font-semibold text-xs mb-2 line-clamp-2 text-foreground">
+                          {game.game_title}
+                        </h3>
+                        <div className="space-y-1.5">
+                          {/* Your status */}
+                          {game.userStatus !== "not-in-library" && (
+                            <div className="bg-blue-50 p-1.5 rounded border border-blue-200">
+                              <div className="flex items-center justify-between text-[10px]">
+                                <div className="flex items-center gap-1">
+                                  <Avatar className="h-3 w-3">
+                                    <AvatarImage
+                                      src={
+                                        user?.user_metadata?.avatar_url ||
+                                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
+                                      }
+                                      alt="You"
+                                    />
+                                    <AvatarFallback className="text-[6px]">
+                                      {(user?.user_metadata?.full_name ||
+                                        user?.email ||
+                                        "Y")[0].toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-primary font-medium">
+                                    You
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {game.userRating && (
+                                    <span className="text-primary font-medium">
+                                      {game.userRating}/10
+                                    </span>
+                                  )}
+                                  <Badge className="text-[8px] px-1 py-0 bg-primary/10 text-primary">
+                                    {game.userStatus === "playing"
+                                      ? "Playing"
+                                      : game.userStatus === "played"
+                                        ? "Played"
+                                        : "Want to Play"}
+                                  </Badge>
+                                </div>
                               </div>
-                            )}
-                            {game.userIsCompleted && (
-                              <div className="bg-green-500 rounded-full p-0.5">
-                                <CheckCircle className="w-2.5 h-2.5 text-white" />
+                            </div>
+                          )}
+
+                          <p className="text-[10px] text-muted-foreground font-medium">
+                            {game.friends.length} friend
+                            {game.friends.length > 1 ? "s" : ""} active:
+                          </p>
+                          <div className="space-y-1 max-h-16 overflow-y-auto">
+                            {game.friends.slice(0, 3).map((friend) => (
+                              <div
+                                key={friend.id}
+                                className="flex items-center justify-between text-[10px]"
+                              >
+                                <div className="flex items-center gap-1">
+                                  <Avatar className="h-3 w-3">
+                                    <AvatarImage
+                                      src={
+                                        friend.avatar_url ||
+                                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.name}`
+                                      }
+                                      alt={friend.name}
+                                    />
+                                    <AvatarFallback className="text-[6px]">
+                                      {friend.name[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-foreground truncate max-w-16">
+                                    {friend.name}
+                                  </span>
+                                  <div className="flex gap-0.5">
+                                    {friend.isFavorite && (
+                                      <Heart className="w-2 h-2 text-red-500 fill-red-500" />
+                                    )}
+                                    {friend.isCompleted && (
+                                      <CheckCircle className="w-2 h-2 text-green-500" />
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {friend.rating && (
+                                    <span className="text-muted-foreground">
+                                      {friend.rating}/10
+                                    </span>
+                                  )}
+                                  <Badge className="text-[8px] px-1 py-0 bg-muted text-muted-foreground">
+                                    {friend.status === "playing"
+                                      ? "Playing"
+                                      : friend.status === "played"
+                                        ? "Played"
+                                        : "Want"}
+                                  </Badge>
+                                </div>
                               </div>
+                            ))}
+                            {game.friends.length > 3 && (
+                              <p className="text-[9px] text-muted-foreground text-center">
+                                +{game.friends.length - 3} more
+                              </p>
                             )}
                           </div>
                         </div>
-                        <CardContent className="p-3">
-                          <h3 className="font-semibold text-xs mb-2 line-clamp-2 text-foreground">
-                            {game.game_title}
-                          </h3>
-                          <div className="space-y-1.5">
-                            {/* Your status */}
-                            {game.userStatus !== "not-in-library" && (
-                              <div className="bg-blue-50 p-1.5 rounded border border-blue-200">
-                                <div className="flex items-center justify-between text-[10px]">
-                                  <div className="flex items-center gap-1">
-                                    <Avatar className="h-3 w-3">
-                                      <AvatarImage
-                                        src={
-                                          user?.user_metadata?.avatar_url ||
-                                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`
-                                        }
-                                        alt="You"
-                                      />
-                                      <AvatarFallback className="text-[6px]">
-                                        {(user?.user_metadata?.full_name ||
-                                          user?.email ||
-                                          "Y")[0].toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-primary font-medium">
-                                      You
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    {game.userRating && (
-                                      <span className="text-primary font-medium">
-                                        {game.userRating}/10
-                                      </span>
-                                    )}
-                                    <Badge className="text-[8px] px-1 py-0 bg-primary/10 text-primary">
-                                      {game.userStatus === "playing"
-                                        ? "Playing"
-                                        : game.userStatus === "played"
-                                          ? "Played"
-                                          : "Want to Play"}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            <p className="text-[10px] text-muted-foreground font-medium">
-                              {game.friends.length} friend
-                              {game.friends.length > 1 ? "s" : ""} active:
-                            </p>
-                            <div className="space-y-1 max-h-16 overflow-y-auto">
-                              {game.friends.slice(0, 3).map((friend) => (
-                                <div
-                                  key={friend.id}
-                                  className="flex items-center justify-between text-[10px]"
-                                >
-                                  <div className="flex items-center gap-1">
-                                    <Avatar className="h-3 w-3">
-                                      <AvatarImage
-                                        src={
-                                          friend.avatar_url ||
-                                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.name}`
-                                        }
-                                        alt={friend.name}
-                                      />
-                                      <AvatarFallback className="text-[6px]">
-                                        {friend.name[0]}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-foreground truncate max-w-16">
-                                      {friend.name}
-                                    </span>
-                                    <div className="flex gap-0.5">
-                                      {friend.isFavorite && (
-                                        <Heart className="w-2 h-2 text-red-500 fill-red-500" />
-                                      )}
-                                      {friend.isCompleted && (
-                                        <CheckCircle className="w-2 h-2 text-green-500" />
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    {friend.rating && (
-                                      <span className="text-muted-foreground">
-                                        {friend.rating}/10
-                                      </span>
-                                    )}
-                                    <Badge className="text-[8px] px-1 py-0 bg-muted text-muted-foreground">
-                                      {friend.status === "playing"
-                                        ? "Playing"
-                                        : friend.status === "played"
-                                          ? "Played"
-                                          : "Want"}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              ))}
-                              {game.friends.length > 3 && (
-                                <p className="text-[9px] text-muted-foreground text-center">
-                                  +{game.friends.length - 3} more
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               ) : (
                 <div className="bg-card rounded-lg border p-8 text-center">
                   <div className="text-gray-400 mb-4">
