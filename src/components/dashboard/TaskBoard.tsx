@@ -94,7 +94,10 @@ const CommentsSection = ({
   }
 
   return (
-    <div className="mt-3 border-t border-border pt-3">
+    <div
+      className="mt-3 border-t border-border pt-3"
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Comments List */}
       {isCommentsVisible && (
         <div className="mb-3">
@@ -148,11 +151,15 @@ const CommentsSection = ({
               value={currentCommentText}
               onChange={handleCommentTextChange}
               onKeyDown={handleKeyPress}
+              onClick={(e) => e.stopPropagation()}
               className="min-h-[36px] max-h-24 resize-none text-sm py-2 px-3"
               rows={1}
             />
             <Button
-              onClick={handleSubmitComment}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSubmitComment();
+              }}
               disabled={!currentCommentText.trim() || isSubmitting}
               size="sm"
               className="h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground"

@@ -1486,7 +1486,10 @@ const GamePage = () => {
                             }}
                           >
                             <DialogTrigger asChild>
-                              <Button className="w-full hover:scale-105 transition-all duration-200 hover:shadow-lg bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 animate-glow group">
+                              <Button
+                                className="w-full hover:scale-105 transition-all duration-200 hover:shadow-lg bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 animate-glow group"
+                                style={{ animationDuration: "2s" }}
+                              >
                                 <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
                                 Add Game
                               </Button>
