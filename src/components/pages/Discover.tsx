@@ -121,7 +121,7 @@ const Discover = () => {
     } catch (error) {
       console.error("Error fetching friends:", error);
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Fetch trending games from friends
   const fetchTrendingGames = useCallback(async () => {
@@ -255,7 +255,7 @@ const Discover = () => {
 
   // Fetch personalized recommendations
   const fetchRecommendations = useCallback(async () => {
-    if (!user) {
+    if (!user?.id) {
       setRecommendations([]);
       setIsLoadingRecommendations(false);
       setIsInitialLoad(false);
@@ -270,37 +270,26 @@ const Discover = () => {
         .select(
           "id, igdb_game_id, game_title, game_cover_url, personal_rating, is_favorite",
         )
-        .eq("user_id", user.id)
+        .eq("user_id", user?.id)
         .or("is_favorite.eq.true,personal_rating.gte.9");
 
+      console.log("allUserGames", allUserGames);
       if (!allUserGames || allUserGames.length === 0) {
+        // Add delay before showing empty state
+        await new Promise((resolve) => setTimeout(resolve, 500));
         setRecommendations([]);
         setIsLoadingRecommendations(false);
         setIsInitialLoad(false);
         return;
       }
 
-      // Use a stable seed for randomization based on user ID and current date
-      // This ensures the same games are selected for the same user on the same day
-      const today = new Date().toDateString();
-      const seed = user.id + today;
-      let hash = 0;
-      for (let i = 0; i < seed.length; i++) {
-        const char = seed.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash; // Convert to 32-bit integer
-      }
+      // Use Math.random() for true randomization on each refresh
+      const shuffledGames = [...allUserGames].sort(() => Math.random() - 0.5);
+      const selectedGames = shuffledGames.slice(0, 3); // Select only 3 games to make API calls for
 
-      // Use the hash to create a stable "random" selection
-      const stableRandom = () => {
-        hash = (hash * 9301 + 49297) % 233280;
-        return hash / 233280;
-      };
-
-      const shuffledGames = [...allUserGames].sort(() => stableRandom() - 0.5);
-      const userGames = shuffledGames.slice(0, 3); // Limit to top 3 to avoid too many API calls
-
-      if (!userGames || userGames.length === 0) {
+      if (!selectedGames || selectedGames.length === 0) {
+        // Add delay before showing empty state
+        await new Promise((resolve) => setTimeout(resolve, 500));
         setRecommendations([]);
         setIsLoadingRecommendations(false);
         setIsInitialLoad(false);
@@ -309,8 +298,8 @@ const Discover = () => {
 
       const recommendationsData: GameRecommendation[] = [];
 
-      // For each favorite/highly-rated game, find similar games
-      for (const game of userGames) {
+      // For each selected game, find similar games
+      for (const game of selectedGames) {
         try {
           const response = await supabase.functions.invoke(
             "supabase-functions-getGameDetails",
@@ -332,7 +321,7 @@ const Discover = () => {
             const { data: existingGames } = await supabase
               .from("game_collections")
               .select("igdb_game_id")
-              .eq("user_id", user.id)
+              .eq("user_id", user?.id)
               .in(
                 "igdb_game_id",
                 response.data.similarGames.map((g: any) => g.id),
@@ -368,6 +357,9 @@ const Discover = () => {
         }
       }
 
+      // Add delay to ensure loading indicator shows long enough for final list to be ready
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       setRecommendations(recommendationsData);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
@@ -375,7 +367,7 @@ const Discover = () => {
       setIsLoadingRecommendations(false);
       setIsInitialLoad(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Load trending games when friends change
   useEffect(() => {
@@ -559,13 +551,6 @@ const Discover = () => {
                                   alt={game.name}
                                   className="w-full h-full object-cover"
                                 />
-                                <div className="absolute top-1 right-1">
-                                  {game.rating && (
-                                    <div className="bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                                      {Math.round(game.rating)}
-                                    </div>
-                                  )}
-                                </div>
                               </div>
                               <CardContent className="p-3">
                                 <h4 className="font-semibold text-xs mb-2 line-clamp-2 text-foreground">
