@@ -132,6 +132,7 @@ const GamePage = () => {
     null,
   );
   const [gameDetails, setGameDetails] = useState<IGDBGameDetails | null>(null);
+  const [similarGames, setSimilarGames] = useState<IGDBGameDetails[]>([]);
   const [friendsData, setFriendsData] = useState<FriendGameData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
@@ -176,6 +177,17 @@ const GamePage = () => {
   // Fetch game collection data or check if it's a direct IGDB game ID
   const fetchGameCollection = useCallback(async () => {
     if (!stableGameId || !stableUserId) return;
+
+    // Reset states when fetching new game data
+    setGameCollection(null);
+    setGameDetails(null);
+    setGameTitle("");
+    setHasUserGame(false);
+    setIgdbGameId(null);
+    setExistingReview(null);
+    setReviewText("");
+    setSimilarGames([]);
+    setFriendsData([]);
 
     try {
       // Check if this is an IGDB ID from search (format: igdb-{id})
@@ -307,11 +319,12 @@ const GamePage = () => {
         return;
       }
 
-      if (data && data.length > 0) {
-        setGameDetails(data[0]);
+      if (data && data.gameData && data.gameData.length > 0) {
+        setGameDetails(data.gameData[0]);
+        setSimilarGames(data.similarGames || []);
         // If we don't have a game title yet, use the one from IGDB
-        if (!gameTitle && data[0].name) {
-          setGameTitle(data[0].name);
+        if (!gameTitle && data.gameData[0].name) {
+          setGameTitle(data.gameData[0].name);
         }
       }
     } catch (error) {
@@ -1096,36 +1109,38 @@ const GamePage = () => {
               <div className="lg:col-span-1 animate-in slide-in-from-left-4 duration-700">
                 <Card className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
                   <div className="aspect-[3/4] relative bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group-hover:from-gray-100 group-hover:to-gray-200 transition-all duration-300">
-                    {gameCollection?.game_cover_url ||
-                    (gameDetails?.cover?.url &&
-                      `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`) ? (
-                      <img
-                        src={
-                          gameCollection?.game_cover_url ||
-                          `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`
-                        }
-                        alt={gameTitle || gameDetails?.name || "Game cover"}
-                        className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                        onError={(e) => {
-                          // Fallback to smaller image if high-res fails
-                          const target = e.target as HTMLImageElement;
-                          if (target.src.includes("t_cover_big")) {
-                            target.src = target.src.replace(
-                              "t_cover_big",
-                              "t_cover_big_2x",
-                            );
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="text-center flex flex-col items-center justify-center h-full">
-                        <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-2 animate-pulse-slow" />
-                        <p className="text-sm text-gray-500 animate-pulse">
-                          Loading cover...
-                        </p>
-                      </div>
-                    )}
+                    {(() => {
+                      // Prioritize gameDetails cover for IGDB games, fallback to gameCollection cover
+                      const coverUrl = gameDetails?.cover?.url
+                        ? `https:${gameDetails.cover.url.replace("t_thumb", "t_cover_big")}`
+                        : gameCollection?.game_cover_url;
+
+                      return coverUrl ? (
+                        <img
+                          src={coverUrl}
+                          alt={gameTitle || gameDetails?.name || "Game cover"}
+                          className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                          onError={(e) => {
+                            // Fallback to smaller image if high-res fails
+                            const target = e.target as HTMLImageElement;
+                            if (target.src.includes("t_cover_big")) {
+                              target.src = target.src.replace(
+                                "t_cover_big",
+                                "t_cover_big_2x",
+                              );
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="text-center flex flex-col items-center justify-center h-full">
+                          <Gamepad2 className="w-16 h-16 text-gray-400 mx-auto mb-2 animate-pulse-slow" />
+                          <p className="text-sm text-gray-500 animate-pulse">
+                            Loading cover...
+                          </p>
+                        </div>
+                      );
+                    })()}
                     {hasUserGame && gameCollection && (
                       <>
                         <div className="absolute top-2 right-2 animate-in slide-in-from-top-2 duration-500 delay-300">
@@ -1874,6 +1889,92 @@ const GamePage = () => {
                     </CardContent>
                   </Card>
                 ) : null}
+
+                {/* Recommended Games Section */}
+                {similarGames.length > 0 && (
+                  <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.01] mb-4">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center justify-between text-lg group">
+                        <div className="flex items-center gap-2">
+                          <Gamepad2 className="w-5 h-5 group-hover:animate-wiggle text-purple-600" />
+                          <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                            Recommended Games
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/recommended/${gameId}`)}
+                          className="hover:scale-105 transition-all duration-200 hover:shadow-md hover:bg-purple-50 hover:border-purple-300 group"
+                        >
+                          See All
+                          <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform duration-200" />
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-3 gap-3">
+                        {similarGames.slice(0, 3).map((game, index) => (
+                          <Card
+                            key={game.id}
+                            className="overflow-hidden hover:shadow-md transition-all duration-300 hover:scale-105 cursor-pointer group animate-in slide-in-from-bottom-2"
+                            style={{ animationDelay: `${index * 100}ms` }}
+                            onClick={() => navigate(`/game/igdb-${game.id}`)}
+                          >
+                            <div className="aspect-[3/4] relative bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
+                              {game.cover?.url ? (
+                                <img
+                                  src={`https:${game.cover.url.replace("t_thumb", "t_cover_big")}`}
+                                  alt={game.name}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    if (target.src.includes("t_cover_big")) {
+                                      target.src = target.src.replace(
+                                        "t_cover_big",
+                                        "t_cover_big_2x",
+                                      );
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <Gamepad2 className="w-8 h-8 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+
+                            <CardContent className="p-2">
+                              <h4 className="font-medium text-xs line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
+                                {game.name}
+                              </h4>
+
+                              {game.rating && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <div className="flex">
+                                    {renderStars(game.rating / 10)}
+                                  </div>
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    {Math.round(game.rating)}/100
+                                  </span>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+
+                      {similarGames.length > 3 && (
+                        <div className="text-center mt-4">
+                          <p className="text-sm text-muted-foreground">
+                            +{similarGames.length - 3} more recommended games
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Friends Section */}
                 <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">

@@ -11,6 +11,7 @@ import Friends from "./components/pages/Friends";
 import SocialTimeline from "./components/pages/SocialTimeline";
 import Discover from "./components/pages/Discover";
 import GamePage from "./components/pages/GamePage";
+import RecommendedGames from "./components/pages/RecommendedGames";
 import GameClubs from "./components/pages/GameClubs";
 import GameClubPage from "./components/GameClub/GameClubPage";
 import Settings from "./components/pages/Settings";
@@ -92,6 +93,14 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <GamePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/recommended/:gameId"
+          element={
+            <PrivateRoute>
+              <RecommendedGames />
             </PrivateRoute>
           }
         />
