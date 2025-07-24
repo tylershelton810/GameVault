@@ -208,9 +208,13 @@ const Sidebar = ({
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-md border border-gray-200 rounded-full h-10 w-10 shadow-sm"
+            className="md:hidden fixed top-3 left-3 z-50 bg-background/90 backdrop-blur-md border rounded-lg h-9 w-9 shadow-sm"
+            style={{
+              borderColor: sidebarBorder,
+              color: sidebarTextColor,
+            }}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4 w-4" />
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-[280px] p-0">

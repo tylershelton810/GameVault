@@ -34,6 +34,8 @@ import {
   Filter,
   MessageSquare,
   FileText,
+  UserCheck,
+  Clock,
 } from "lucide-react";
 import SearchSortFilter from "@/components/ui/search-sort-filter";
 import Sidebar from "@/components/dashboard/layout/Sidebar";
@@ -928,23 +930,32 @@ const Friends = () => {
               <TabsList className="grid w-full grid-cols-3 bg-muted/50 backdrop-blur-sm">
                 <TabsTrigger
                   value="friends"
-                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600 px-2 md:px-3"
                 >
-                  My Friends (
-                  {friends.filter((f) => f.status === "accepted").length})
+                  <Users className="w-4 h-4 md:hidden" />
+                  <span className="hidden md:inline">
+                    My Friends (
+                    {friends.filter((f) => f.status === "accepted").length})
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="requests"
-                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 px-2 md:px-3"
                 >
-                  Requests (
-                  {friends.filter((f) => f.status === "requested").length})
+                  <UserCheck className="w-4 h-4 md:hidden" />
+                  <span className="hidden md:inline">
+                    Requests (
+                    {friends.filter((f) => f.status === "requested").length})
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="shared"
-                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 px-2 md:px-3"
                 >
-                  Shared Games ({sharedGames.length})
+                  <Gamepad2 className="w-4 h-4 md:hidden" />
+                  <span className="hidden md:inline">
+                    Shared Games ({sharedGames.length})
+                  </span>
                 </TabsTrigger>
               </TabsList>
 

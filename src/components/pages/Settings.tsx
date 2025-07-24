@@ -196,8 +196,8 @@ const Settings = () => {
           onOpenChange={setIsMobileMenuOpen}
         />
 
-        <div className="flex-1 p-6 md:p-8">
-          <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex-1 p-4 sm:p-6 md:p-8">
+          <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">
                 Settings
@@ -227,26 +227,28 @@ const Settings = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                      <div className="space-y-0.5 flex-1">
                         <Label
                           htmlFor="friend-requests"
                           className="text-base font-medium"
                         >
                           Friend Requests
                         </Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground pr-2">
                           Get notified when someone sends you a friend request
                         </p>
                       </div>
-                      <Switch
-                        id="friend-requests"
-                        checked={notificationPreferences.friend_requests}
-                        onCheckedChange={(checked) =>
-                          handlePreferenceChange("friend_requests", checked)
-                        }
-                        disabled={isSavingPreferences}
-                      />
+                      <div className="flex justify-end sm:justify-start">
+                        <Switch
+                          id="friend-requests"
+                          checked={notificationPreferences.friend_requests}
+                          onCheckedChange={(checked) =>
+                            handlePreferenceChange("friend_requests", checked)
+                          }
+                          disabled={isSavingPreferences}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -282,8 +284,8 @@ const Settings = () => {
                   </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
                     <h4 className="font-semibold text-foreground flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
                       One-Time Donation
@@ -292,13 +294,13 @@ const Settings = () => {
                       Make a one-time contribution to support GameVault
                       development.
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleStripeCheckout(5, "donation")}
                         disabled={isProcessingPayment}
-                        className="hover:bg-primary/10"
+                        className="hover:bg-primary/10 min-w-0"
                       >
                         $5
                       </Button>
@@ -307,7 +309,7 @@ const Settings = () => {
                         size="sm"
                         onClick={() => handleStripeCheckout(10, "donation")}
                         disabled={isProcessingPayment}
-                        className="hover:bg-primary/10"
+                        className="hover:bg-primary/10 min-w-0"
                       >
                         $10
                       </Button>
@@ -316,7 +318,7 @@ const Settings = () => {
                         size="sm"
                         onClick={() => handleStripeCheckout(25, "donation")}
                         disabled={isProcessingPayment}
-                        className="hover:bg-primary/10"
+                        className="hover:bg-primary/10 min-w-0"
                       >
                         $25
                       </Button>
@@ -334,14 +336,14 @@ const Settings = () => {
                           }
                         }}
                         disabled={isProcessingPayment}
-                        className="hover:bg-primary/10"
+                        className="hover:bg-primary/10 min-w-0"
                       >
                         Custom
                       </Button>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <h4 className="font-semibold text-foreground flex items-center gap-2">
                       <Heart className="h-4 w-4 text-red-500" />
                       Monthly Support
@@ -350,13 +352,13 @@ const Settings = () => {
                       Become a monthly supporter and help ensure GameVault's
                       continued growth.
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2">
                       <Button
                         variant="default"
                         size="sm"
                         onClick={() => handleStripeCheckout(3, "subscription")}
                         disabled={isProcessingPayment}
-                        className="bg-primary hover:bg-primary/90"
+                        className="bg-primary hover:bg-primary/90 min-w-0"
                       >
                         $3/month
                       </Button>
@@ -365,7 +367,7 @@ const Settings = () => {
                         size="sm"
                         onClick={() => handleStripeCheckout(5, "subscription")}
                         disabled={isProcessingPayment}
-                        className="bg-primary hover:bg-primary/90"
+                        className="bg-primary hover:bg-primary/90 min-w-0"
                       >
                         $5/month
                       </Button>
@@ -374,7 +376,7 @@ const Settings = () => {
                         size="sm"
                         onClick={() => handleStripeCheckout(10, "subscription")}
                         disabled={isProcessingPayment}
-                        className="bg-primary hover:bg-primary/90"
+                        className="bg-primary hover:bg-primary/90 min-w-0"
                       >
                         $10/month
                       </Button>
@@ -388,13 +390,13 @@ const Settings = () => {
                     size="sm"
                     onClick={handleCustomerPortal}
                     disabled={isLoadingPortal || isProcessingPayment}
-                    className="w-full max-w-xs"
+                    className="w-full sm:max-w-xs"
                   >
                     {isLoadingPortal
                       ? "Loading..."
                       : "Manage Billing & Subscriptions"}
                   </Button>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground px-2">
                     All payments are securely processed by Stripe. You can
                     cancel recurring support at any time through the billing
                     portal.
@@ -417,7 +419,7 @@ const Settings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Object.values(themes).map((themeOption) => (
                     <div
                       key={themeOption.name}

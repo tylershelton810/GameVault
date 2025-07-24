@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Bell,
-  Home,
   Search,
   Settings,
   User,
@@ -299,24 +298,9 @@ const TopNavigation = ({
       className="w-full h-16 border-b bg-background/95 backdrop-blur-md flex items-center justify-between px-4 md:px-6 fixed top-0 z-40 shadow-sm"
       style={{ borderColor: currentTheme.colors.border }}
     >
-      <div className="flex items-center gap-2 md:gap-4 flex-1">
-        {showMobileMenu && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden h-8 w-8"
-            onClick={onMobileMenuClick}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        )}
-        <Link
-          to="/"
-          className="text-foreground hover:text-muted-foreground transition-colors"
-        >
-          <Home className="h-5 w-5" />
-        </Link>
-        <div className="relative w-full max-w-sm md:w-64">
+      <div className="flex items-center gap-3 md:gap-4 flex-1">
+        {/* Mobile: Add left padding to account for hamburger menu */}
+        <div className="relative w-full max-w-[200px] sm:max-w-sm md:max-w-none md:w-64 ml-12 md:ml-0 mr-3 md:mr-0">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           {isSearching && (
             <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
@@ -331,7 +315,7 @@ const TopNavigation = ({
           )}
           <Input
             placeholder="Search games..."
-            className="pl-9 pr-9 h-10 rounded-full border-0 text-sm focus:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+            className="pl-9 pr-9 h-10 rounded-full border-0 text-sm focus:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full md:w-auto"
             style={{
               backgroundColor: `hsl(${currentTheme.colors.muted})`,
               color: `hsl(${currentTheme.colors.foreground})`,
@@ -385,7 +369,7 @@ const TopNavigation = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

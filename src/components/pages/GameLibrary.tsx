@@ -36,6 +36,10 @@ import {
   Users,
   FileText,
   MessageSquare,
+  Grid3X3,
+  Play,
+  CheckSquare,
+  Clock,
 } from "lucide-react";
 import Sidebar from "@/components/dashboard/layout/Sidebar";
 import TopNavigation from "@/components/dashboard/layout/TopNavigation";
@@ -1215,28 +1219,41 @@ const GameLibrary = () => {
               <TabsList className="grid w-full grid-cols-4 bg-muted/50 backdrop-blur-sm">
                 <TabsTrigger
                   value="all"
-                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600 px-2 md:px-3"
                 >
-                  All Games ({games.length})
+                  <Grid3X3 className="w-4 h-4 md:hidden" />
+                  <span className="hidden md:inline">
+                    All Games ({games.length})
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="playing"
-                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 px-2 md:px-3"
                 >
-                  Playing ({games.filter((g) => g.status === "playing").length})
+                  <Play className="w-4 h-4 md:hidden" />
+                  <span className="hidden md:inline">
+                    Playing (
+                    {games.filter((g) => g.status === "playing").length})
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="played"
-                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 px-2 md:px-3"
                 >
-                  Played ({games.filter((g) => g.status === "played").length})
+                  <CheckSquare className="w-4 h-4 md:hidden" />
+                  <span className="hidden md:inline">
+                    Played ({games.filter((g) => g.status === "played").length})
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="want-to-play"
-                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-600"
+                  className="transition-all duration-200 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-600 px-2 md:px-3"
                 >
-                  Want to Play (
-                  {games.filter((g) => g.status === "want-to-play").length})
+                  <Clock className="w-4 h-4 md:hidden" />
+                  <span className="hidden md:inline">
+                    Want to Play (
+                    {games.filter((g) => g.status === "want-to-play").length})
+                  </span>
                 </TabsTrigger>
               </TabsList>
 
