@@ -1,6 +1,23 @@
 import path from "path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+// Conditional tempo import
+let tempo: any = () => ({});
+if (process.env.TEMPO === "true") {
+  try {
+    const tempoModule = await import("tempo-devtools/dist/vite");
+    tempo = tempoModule.tempo;
+  } catch (error) {
+    console.warn("Tempo plugin not available:", error);
+  }
+}
+
+const conditionalPlugins: [string, Record<string, any>][] = [];
+
+// @ts-ignore
+if (process.env.TEMPO === "true") {
+  conditionalPlugins.push(["tempo-devtools/swc", {}]);
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,7 +28,12 @@ export default defineConfig({
   optimizeDeps: {
     entries: ["src/main.tsx"],
   },
-  plugins: [react()],
+  plugins: [
+    react({
+      plugins: conditionalPlugins,
+    }),
+    ...(process.env.TEMPO === "true" ? [tempo()] : []),
+  ],
   resolve: {
     preserveSymlinks: true,
     alias: {

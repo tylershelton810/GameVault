@@ -123,6 +123,13 @@ const GameLibrary = () => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [steamGames, setSteamGames] = useState<any[]>([]);
+  const [isLoadingSteamGames, setIsLoadingSteamGames] = useState(false);
+  const [showSteamGames, setShowSteamGames] = useState(false);
+  const [selectedSteamGames, setSelectedSteamGames] = useState<Set<number>>(
+    new Set(),
+  );
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // IGDB API search function
   const searchIGDBGames = useCallback(async (query: string) => {
@@ -352,6 +359,25 @@ const GameLibrary = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Fetch current user data including steam_id
+  const fetchCurrentUser = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data: userData, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (!error && userData) {
+        setCurrentUser(userData);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  }, [user]);
+
   // Initialize data loading
   useEffect(() => {
     const initializeData = async () => {
@@ -501,6 +527,9 @@ const GameLibrary = () => {
 
           setGames(transformedGames);
         }
+
+        // Fetch current user data
+        await fetchCurrentUser();
       } catch (error) {
         console.error("Error initializing data:", error);
       } finally {
@@ -512,7 +541,7 @@ const GameLibrary = () => {
     if (user && isInitialLoad) {
       initializeData();
     }
-  }, [user, isInitialLoad]);
+  }, [user, isInitialLoad, fetchCurrentUser]);
 
   // Debounced search effect
   useEffect(() => {
@@ -936,6 +965,106 @@ const GameLibrary = () => {
     setIsAddGameOpen(false);
   };
 
+  // Handle Steam library pull
+  const handlePullSteamGames = async () => {
+    if (!currentUser?.steam_id) return;
+
+    setIsLoadingSteamGames(true);
+    try {
+      const response = await supabase.functions.invoke(
+        "supabase-functions-steam-pull-games",
+        {
+          body: { steamId: currentUser.steam_id },
+        },
+      );
+
+      if (response.error) {
+        console.error("Error pulling Steam games:", response.error);
+        return;
+      }
+
+      const { games, totalSteamGames, matchedGames } = response.data;
+      setSteamGames(games || []);
+      setShowSteamGames(true);
+      console.log(
+        `Found ${totalSteamGames} Steam games, matched ${matchedGames} with IGDB`,
+      );
+    } catch (error) {
+      console.error("Error pulling Steam games:", error);
+    } finally {
+      setIsLoadingSteamGames(false);
+    }
+  };
+
+  // Handle Steam game selection
+  const handleSteamGameToggle = (igdbId: number) => {
+    const newSelected = new Set(selectedSteamGames);
+    if (newSelected.has(igdbId)) {
+      newSelected.delete(igdbId);
+    } else {
+      newSelected.add(igdbId);
+    }
+    setSelectedSteamGames(newSelected);
+  };
+
+  // Handle importing selected Steam games
+  const handleImportSteamGames = async () => {
+    if (!user || selectedSteamGames.size === 0) return;
+
+    setIsAddingGame(true);
+    try {
+      const gamesToImport = steamGames.filter((game) =>
+        selectedSteamGames.has(game.igdbGame.id),
+      );
+      console.log("GAMES TO IMPORT:", gamesToImport);
+      for (const steamGame of gamesToImport) {
+        const gameData = {
+          user_id: user.id,
+          igdb_game_id: steamGame.igdbGame.id,
+          game_title: steamGame.igdbGame.name,
+          game_cover_url: steamGame.igdbGame.cover
+            ? `https:${steamGame.igdbGame.cover.url.replace("t_thumb", "t_cover_big")}`
+            : null,
+          status: steamGame.steamPlaytime > 0 ? "played" : "want-to-play", //
+          date_added: new Date().toISOString(),
+        };
+
+        const { data: insertedGameData, error } = await supabase
+          .from("game_collections")
+          .insert([gameData])
+          .select()
+          .single();
+
+        if (!error && insertedGameData) {
+          // Log activity to activity_feed
+          await supabase.from("activity_feed").insert({
+            user_id: user.id,
+            activity_type: "game_added",
+            game_collection_id: insertedGameData.id,
+            activity_data: {
+              game_title: steamGame.igdbGame.name,
+              status: "want-to-play",
+              igdb_game_id: steamGame.igdbGame.id,
+              imported_from: "steam",
+            },
+          });
+        }
+      }
+
+      // Refresh the games list
+      await fetchUserGames();
+
+      // Reset Steam import state
+      setShowSteamGames(false);
+      setSteamGames([]);
+      setSelectedSteamGames(new Set());
+    } catch (error) {
+      console.error("Error importing Steam games:", error);
+    } finally {
+      setIsAddingGame(false);
+    }
+  };
+
   return (
     <div className="bg-background">
       <TopNavigation
@@ -963,81 +1092,238 @@ const GameLibrary = () => {
                 </p>
               </div>
 
-              <Dialog open={isAddGameOpen} onOpenChange={setIsAddGameOpen}>
-                <DialogTrigger asChild>
-                  <Button className="hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary">
-                    <Plus className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:rotate-90" />
-                    Add Game
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Search Games</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <Input
-                        placeholder="Search for a game..."
-                        value={gameSearchTerm}
-                        onChange={(e) => setGameSearchTerm(e.target.value)}
-                      />
-                      {isSearching && (
-                        <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin" />
-                      )}
-                    </div>
-
-                    {/* Search Results */}
-                    {searchResults.length > 0 && (
-                      <div className="max-h-60 overflow-y-auto border rounded-md">
-                        {searchResults.map((game) => (
-                          <div
-                            key={game.id}
-                            className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0 flex items-start gap-3"
-                            onClick={() => handleGameSelect(game)}
-                          >
-                            {game.cover && (
-                              <img
-                                src={`https:${game.cover.url.replace("t_thumb", "t_cover_small")}`}
-                                alt={game.name}
-                                className="w-12 h-16 object-cover rounded"
-                              />
-                            )}
-                            <div className="flex-1">
-                              <h4 className="font-medium text-sm">
-                                {game.name}
-                              </h4>
-                              {game.rating && (
-                                <p className="text-xs text-muted-foreground">
-                                  Rating: {Math.round(game.rating)}/100
-                                </p>
-                              )}
-                              {game.summary && (
-                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                  {game.summary.length > 100
-                                    ? `${game.summary.substring(0, 100)}...`
-                                    : game.summary}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+              <div className="flex gap-2">
+                <Dialog open={isAddGameOpen} onOpenChange={setIsAddGameOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-primary to-purple-600 hover:from-purple-600 hover:to-primary">
+                      <Plus className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:rotate-90" />
+                      Add Game
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Search Games</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <Input
+                          placeholder="Search for a game..."
+                          value={gameSearchTerm}
+                          onChange={(e) => setGameSearchTerm(e.target.value)}
+                        />
+                        {isSearching && (
+                          <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin" />
+                        )}
                       </div>
-                    )}
 
-                    {gameSearchTerm &&
-                      searchResults.length === 0 &&
-                      !isSearching && (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">
-                            No games found. Try a different search term.
-                          </p>
+                      {/* Search Results */}
+                      {searchResults.length > 0 && (
+                        <div className="max-h-60 overflow-y-auto border rounded-md">
+                          {searchResults.map((game, gameIndex) => (
+                            <div
+                              key={`search-${game.id}-${gameIndex}`}
+                              className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0 flex items-start gap-3"
+                              onClick={() => handleGameSelect(game)}
+                            >
+                              {game.cover && (
+                                <img
+                                  src={`https:${game.cover.url.replace("t_thumb", "t_cover_small")}`}
+                                  alt={game.name}
+                                  className="w-12 h-16 object-cover rounded"
+                                />
+                              )}
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm">
+                                  {game.name}
+                                </h4>
+                                {game.rating && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Rating: {Math.round(game.rating)}/100
+                                  </p>
+                                )}
+                                {game.summary && (
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    {game.summary.length > 100
+                                      ? `${game.summary.substring(0, 100)}...`
+                                      : game.summary}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
 
-                    {!gameSearchTerm && (
+                      {gameSearchTerm &&
+                        searchResults.length === 0 &&
+                        !isSearching && (
+                          <div className="text-center py-8">
+                            <p className="text-muted-foreground">
+                              No games found. Try a different search term.
+                            </p>
+                          </div>
+                        )}
+
+                      {!gameSearchTerm && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">
+                            Start typing to search for games...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {currentUser?.steam_id && (
+                  <Button
+                    onClick={handlePullSteamGames}
+                    disabled={isLoadingSteamGames}
+                    variant="outline"
+                    className="hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    {isLoadingSteamGames ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Loading Steam Library...
+                      </>
+                    ) : (
+                      <>
+                        <Users className="w-4 h-4 mr-2" />
+                        Pull Steam Games
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              {/* Steam Games Import Dialog */}
+              <Dialog open={showSteamGames} onOpenChange={setShowSteamGames}>
+                <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Import Steam Games</DialogTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Found {steamGames.length} games from your Steam library.
+                      Select the games you want to import:
+                    </p>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {steamGames.length > 0 ? (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (
+                                selectedSteamGames.size === steamGames.length
+                              ) {
+                                setSelectedSteamGames(new Set());
+                              } else {
+                                setSelectedSteamGames(
+                                  new Set(steamGames.map((g) => g.igdbGame.id)),
+                                );
+                              }
+                            }}
+                          >
+                            {selectedSteamGames.size === steamGames.length
+                              ? "Deselect All"
+                              : "Select All"}
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            {selectedSteamGames.size} of {steamGames.length}{" "}
+                            selected
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                          {steamGames.map((steamGame, steamIndex) => (
+                            <div
+                              key={`steam-${steamGame.igdbGame.id}-${steamIndex}`}
+                              className={`border rounded-lg p-3 cursor-pointer transition-all duration-200 ${
+                                selectedSteamGames.has(steamGame.igdbGame.id)
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                              onClick={() =>
+                                handleSteamGameToggle(steamGame.igdbGame.id)
+                              }
+                            >
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={selectedSteamGames.has(
+                                    steamGame.igdbGame.id,
+                                  )}
+                                  onChange={() =>
+                                    handleSteamGameToggle(steamGame.igdbGame.id)
+                                  }
+                                />
+                                {steamGame.igdbGame.cover && (
+                                  <img
+                                    src={`https:${steamGame.igdbGame.cover.url.replace("t_thumb", "t_cover_small")}`}
+                                    alt={steamGame.igdbGame.name}
+                                    className="w-12 h-16 object-cover rounded"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-sm truncate">
+                                    {steamGame.igdbGame.name}
+                                  </h4>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    Steam: {steamGame.steamName}
+                                  </p>
+                                  {steamGame.steamPlaytime > 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {Math.round(steamGame.steamPlaytime / 60)}{" "}
+                                      hours played
+                                    </p>
+                                  )}
+                                  {steamGame.igdbGame.rating && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Rating:{" "}
+                                      {Math.round(steamGame.igdbGame.rating)}
+                                      /100
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              setShowSteamGames(false);
+                              setSteamGames([]);
+                              setSelectedSteamGames(new Set());
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            className="flex-1"
+                            onClick={handleImportSteamGames}
+                            disabled={
+                              selectedSteamGames.size === 0 || isAddingGame
+                            }
+                          >
+                            {isAddingGame ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Importing...
+                              </>
+                            ) : (
+                              `Import ${selectedSteamGames.size} Games`
+                            )}
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">
-                          Start typing to search for games...
+                          No games found in your Steam library or your library
+                          is set to private.
                         </p>
                       </div>
                     )}
@@ -1269,7 +1555,7 @@ const GameLibrary = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                     {sortedGames.map((game, index) => (
                       <Card
-                        key={game.id}
+                        key={`game-${game.id}-${index}`}
                         className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:-translate-y-2 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm border-2 hover:border-primary/30"
                         onClick={() => navigate(`/game/${game.id}`)}
                         style={{
@@ -1350,7 +1636,7 @@ const GameLibrary = () => {
                                     {game.friendsWithGame.map(
                                       (friend, friendIndex) => (
                                         <div
-                                          key={friend.id}
+                                          key={`friend-${friend.id}-${game.id}-${friendIndex}`}
                                           className="flex items-center gap-2 text-xs hover:bg-accent/30 p-1 rounded transition-all duration-200"
                                           style={{
                                             animationDelay: `${friendIndex * 0.1}s`,
