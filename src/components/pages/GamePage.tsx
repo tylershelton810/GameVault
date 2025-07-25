@@ -1269,7 +1269,9 @@ const GamePage = () => {
                                       <Checkbox
                                         id="edit-completed"
                                         checked={isCompleted}
-                                        onCheckedChange={setIsCompleted}
+                                        onCheckedChange={(checked) =>
+                                          setIsCompleted(checked as boolean)
+                                        }
                                         className="flex-shrink-0"
                                       />
                                       <Label
@@ -1283,7 +1285,9 @@ const GamePage = () => {
                                       <Checkbox
                                         id="edit-favorite"
                                         checked={isFavorite}
-                                        onCheckedChange={setIsFavorite}
+                                        onCheckedChange={(checked) =>
+                                          setIsFavorite(checked as boolean)
+                                        }
                                         className="flex-shrink-0"
                                       />
                                       <Label
@@ -1587,7 +1591,9 @@ const GamePage = () => {
                                     <Checkbox
                                       id="completed"
                                       checked={isCompleted}
-                                      onCheckedChange={setIsCompleted}
+                                      onCheckedChange={(checked) =>
+                                        setIsCompleted(checked as boolean)
+                                      }
                                       className="size-4 flex-shrink-0"
                                     />
                                     <Label
@@ -1601,7 +1607,9 @@ const GamePage = () => {
                                     <Checkbox
                                       id="favorite"
                                       checked={isFavorite}
-                                      onCheckedChange={setIsFavorite}
+                                      onCheckedChange={(checked) =>
+                                        setIsFavorite(checked as boolean)
+                                      }
                                       className="flex-shrink-0"
                                     />
                                     <Label
