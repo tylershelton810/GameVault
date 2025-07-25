@@ -385,8 +385,8 @@ const TopNavigation = ({
       <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenu>
+            <DropdownMenu>
+              <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -405,53 +405,53 @@ const TopNavigation = ({
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="rounded-xl overflow-hidden p-2 shadow-lg"
-                >
-                  <DropdownMenuLabel className="text-sm font-medium px-2">
-                    Notifications
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="my-1" />
-                  {isLoadingNotifications ? (
-                    <DropdownMenuItem className="rounded-lg text-sm py-2 text-muted-foreground">
-                      Loading...
-                    </DropdownMenuItem>
-                  ) : notifications.length > 0 ? (
-                    notifications.map((notification) => (
-                      <DropdownMenuItem
-                        key={notification.id}
-                        className="rounded-lg text-sm py-2 cursor-pointer hover:bg-accent"
-                        onClick={() => handleNotificationClick(notification)}
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="flex-shrink-0">
-                            {getNotificationIcon(notification)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {getNotificationTitle(notification)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(
-                                notification.created_at,
-                              ).toLocaleDateString()}
-                            </p>
-                          </div>
+              </TooltipTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="rounded-xl overflow-hidden p-2 shadow-lg"
+              >
+                <DropdownMenuLabel className="text-sm font-medium px-2">
+                  Notifications
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-1" />
+                {isLoadingNotifications ? (
+                  <DropdownMenuItem className="rounded-lg text-sm py-2 text-muted-foreground">
+                    Loading...
+                  </DropdownMenuItem>
+                ) : notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem
+                      key={notification.id}
+                      className="rounded-lg text-sm py-2 cursor-pointer hover:bg-accent"
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="flex-shrink-0">
+                          {getNotificationIcon(notification)}
                         </div>
-                      </DropdownMenuItem>
-                    ))
-                  ) : (
-                    <DropdownMenuItem className="rounded-lg text-sm py-2 text-muted-foreground">
-                      No new notifications
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {getNotificationTitle(notification)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(
+                              notification.created_at,
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
                     </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TooltipTrigger>
-            <TooltipContent className="rounded-lg text-xs px-3 py-1.5">
-              <p>Notifications</p>
-            </TooltipContent>
+                  ))
+                ) : (
+                  <DropdownMenuItem className="rounded-lg text-sm py-2 text-muted-foreground">
+                    No new notifications
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+              <TooltipContent className="rounded-lg text-xs px-3 py-1.5">
+                <p>Notifications</p>
+              </TooltipContent>
+            </DropdownMenu>
           </Tooltip>
         </TooltipProvider>
         <DropdownMenu>

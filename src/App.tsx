@@ -162,6 +162,14 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/api/steam/callback"
+          element={
+            <PrivateRoute>
+              <Account />
+            </PrivateRoute>
+          }
+        />
       </Routes>
       {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
     </>

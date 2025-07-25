@@ -27,6 +27,8 @@ type AuthContextType = {
   getNotificationPreferences: () => Promise<Record<string, boolean>>;
   getOnboardingStatus: () => Promise<OnboardingStatus>;
   updateOnboardingStatus: (status: Partial<OnboardingStatus>) => Promise<void>;
+  linkSteamAccount: () => Promise<void>;
+  getSteamId: () => Promise<string | null>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -223,6 +225,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
+  const linkSteamAccount = async () => {
+    if (!user) throw new Error("No user logged in");
+
+    // Get the current session token
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
+
+    // Redirect to Steam auth endpoint with token
+    window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supabase-functions-steam-auth?token=${encodeURIComponent(session.access_token)}`;
+  };
+
+  const getSteamId = async (): Promise<string | null> => {
+    if (!user) throw new Error("No user logged in");
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("steam_id")
+      .eq("id", user.id)
+      .single();
+
+    if (error) throw error;
+
+    return data?.steam_id || null;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -236,6 +265,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         getNotificationPreferences,
         getOnboardingStatus,
         updateOnboardingStatus,
+        linkSteamAccount,
+        getSteamId,
       }}
     >
       {children}

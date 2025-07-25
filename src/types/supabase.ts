@@ -579,6 +579,7 @@ export type Database = {
           notification_preferences: Json | null
           onboarding_status: Json | null
           special_badges: Json | null
+          steam_id: string | null
           token_identifier: string
           updated_at: string | null
           user_id: string | null
@@ -594,6 +595,7 @@ export type Database = {
           notification_preferences?: Json | null
           onboarding_status?: Json | null
           special_badges?: Json | null
+          steam_id?: string | null
           token_identifier: string
           updated_at?: string | null
           user_id?: string | null
@@ -609,6 +611,7 @@ export type Database = {
           notification_preferences?: Json | null
           onboarding_status?: Json | null
           special_badges?: Json | null
+          steam_id?: string | null
           token_identifier?: string
           updated_at?: string | null
           user_id?: string | null

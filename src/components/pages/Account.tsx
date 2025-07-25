@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import {
   Trophy,
   Star,
@@ -18,6 +19,9 @@ import {
   MessageSquare,
   FileText,
   Info,
+  Link,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import Sidebar from "@/components/dashboard/layout/Sidebar";
 import TopNavigation from "@/components/dashboard/layout/TopNavigation";
@@ -25,7 +29,8 @@ import { useAuth } from "../../../supabase/auth";
 import { supabase } from "../../../supabase/supabase";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useTheme } from "@/lib/theme";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 interface GameBadge {
   id: string;
@@ -52,14 +57,18 @@ interface UserStats {
 }
 
 const Account = () => {
-  const { user } = useAuth();
+  const { user, linkSteamAccount, getSteamId } = useAuth();
   const { currentTheme } = useTheme();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [activeItem, setActiveItem] = useState("Account");
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [steamId, setSteamId] = useState<string | null>(null);
+  const [isLinkingSteam, setIsLinkingSteam] = useState(false);
 
   // Check for mobile
   useEffect(() => {
@@ -71,6 +80,76 @@ const Account = () => {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Check for Steam linking result
+  useEffect(() => {
+    const steamResult = searchParams.get("steam");
+    if (steamResult === "linked") {
+      toast({
+        title: "Steam Account Linked",
+        description: "Your Steam account has been successfully linked!",
+      });
+      // Remove the parameter from URL
+      navigate("/account", { replace: true });
+    } else if (steamResult === "error") {
+      toast({
+        title: "Steam Linking Failed",
+        description:
+          "There was an error linking your Steam account. Please try again.",
+        variant: "destructive",
+      });
+      // Remove the parameter from URL
+      navigate("/account", { replace: true });
+    }
+  }, [searchParams, toast, navigate]);
+
+  // Fetch Steam ID
+  useEffect(() => {
+    const fetchSteamId = async () => {
+      if (!user) return;
+      try {
+        const id = await getSteamId();
+        setSteamId(id);
+      } catch (error) {
+        console.error("Error fetching Steam ID:", error);
+      }
+    };
+
+    fetchSteamId();
+  }, [user, getSteamId]);
+
+  // Handle Steam account linking
+  const handleLinkSteam = async () => {
+    try {
+      setIsLinkingSteam(true);
+
+      // Get the current user's JWT token
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("No valid session found");
+      }
+
+      // Construct the Steam auth URL with the token
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const steamAuthUrl = `${supabaseUrl}/functions/v1/supabase-functions-steam-auth?token=${encodeURIComponent(session.access_token)}`;
+
+      console.log("Redirecting to Steam auth URL:", steamAuthUrl);
+
+      // Redirect to the Steam auth endpoint
+      window.location.href = steamAuthUrl;
+    } catch (error) {
+      console.error("Error linking Steam account:", error);
+      toast({
+        title: "Steam Linking Failed",
+        description:
+          "There was an error linking your Steam account. Please try again.",
+        variant: "destructive",
+      });
+      setIsLinkingSteam(false);
+    }
+  };
 
   // Fetch user stats
   useEffect(() => {
@@ -538,18 +617,101 @@ const Account = () => {
                           : ""}
                       </span>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 flex items-center gap-2"
-                      onClick={() => navigate("/about")}
-                    >
-                      <Info className="w-4 h-4" />
-                      About Game Shlf
-                    </Button>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={() => navigate("/about")}
+                      >
+                        <Info className="w-4 h-4" />
+                        About Game Shlf
+                      </Button>
+                    </div>
                   </div>
                 </CardTitle>
               </CardHeader>
+            </Card>
+
+            {/* Steam Integration Section */}
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gamepad2 className="w-6 h-6 text-blue-600" />
+                  Steam Integration
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-2">
+                      Link Your Steam Account
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Connect your Steam account to import your game library and
+                      enhance your gaming experience.
+                    </p>
+                    {steamId && (
+                      <div className="flex items-center gap-2 mb-4">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span className="text-sm text-green-600 font-medium">
+                          Steam account linked (ID: {steamId})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0">
+                    {steamId ? (
+                      <Button
+                        variant="outline"
+                        disabled
+                        className="flex items-center gap-2"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Linked
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleLinkSteam}
+                        disabled={isLinkingSteam}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {isLinkingSteam ? (
+                          <>
+                            <LoadingSpinner className="w-4 h-4" />
+                            Linking...
+                          </>
+                        ) : (
+                          <>
+                            <Link className="w-4 h-4" />
+                            Link Steam Account
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {!steamId && (
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                          Why link your Steam account?
+                        </h4>
+                        <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                          <li>
+                            • Import your existing game library automatically
+                          </li>
+                          <li>• Get personalized game recommendations</li>
+                          <li>• Track your gaming progress across platforms</li>
+                          <li>• Connect with friends who also use Steam</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
             </Card>
 
             {/* Stats Grid */}
