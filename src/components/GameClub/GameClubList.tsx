@@ -146,7 +146,9 @@ const GameClubList = ({
 
       // Transform data
       const transformedClubs: GameClub[] = membershipData.map((membership) => {
-        const club = membership.game_clubs;
+        const club = Array.isArray(membership.game_clubs)
+          ? membership.game_clubs[0]
+          : membership.game_clubs;
         const memberCount =
           memberCounts?.filter((m) => m.club_id === club.id).length || 0;
         const clubRecentMembers =

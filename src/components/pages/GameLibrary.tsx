@@ -1253,7 +1253,7 @@ const GameLibrary = () => {
                                   checked={selectedSteamGames.has(
                                     steamGame.igdbGame.id,
                                   )}
-                                  onChange={() =>
+                                  onCheckedChange={() =>
                                     handleSteamGameToggle(steamGame.igdbGame.id)
                                   }
                                 />
@@ -1377,7 +1377,9 @@ const GameLibrary = () => {
                         <Checkbox
                           id="edit-completed"
                           checked={isCompleted}
-                          onCheckedChange={setIsCompleted}
+                          onCheckedChange={(checked) =>
+                            setIsCompleted(checked === true)
+                          }
                         />
                         <Label htmlFor="edit-completed">Completed</Label>
                       </div>
@@ -1385,7 +1387,9 @@ const GameLibrary = () => {
                         <Checkbox
                           id="edit-favorite"
                           checked={isFavorite}
-                          onCheckedChange={setIsFavorite}
+                          onCheckedChange={(checked) =>
+                            setIsFavorite(checked === true)
+                          }
                         />
                         <Label htmlFor="edit-favorite">Favorite</Label>
                       </div>
