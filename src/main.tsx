@@ -13,7 +13,7 @@ if (import.meta.env.VITE_TEMPO === "true") {
     console.warn("Tempo devtools not available:", error);
   }
 }
-
+        
 const basename = import.meta.env.BASE_URL;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

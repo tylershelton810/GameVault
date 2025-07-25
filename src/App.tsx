@@ -49,6 +49,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+console.log("TEST");
 function AppRoutes() {
   return (
     <>
