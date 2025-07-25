@@ -156,7 +156,8 @@ const GameClubList = ({
             ?.filter((m) => m.club_id === club.id)
             .slice(0, 4)
             .map((m) => m.users)
-            .filter(Boolean) || [];
+            .filter(Boolean)
+            .flat() || [];
         const unreadCount =
           messageCounts?.filter((m) => m.club_id === club.id).length || 0;
 
@@ -177,7 +178,9 @@ const GameClubList = ({
           member_count: memberCount,
           unread_messages: unreadCount,
           user_role: membership.role,
-          creator_name: club.creator?.full_name || "Unknown",
+          creator_name: Array.isArray(club.creator)
+            ? club.creator[0]?.full_name || "Unknown"
+            : club.creator?.full_name || "Unknown",
           recent_members: clubRecentMembers,
         };
       });

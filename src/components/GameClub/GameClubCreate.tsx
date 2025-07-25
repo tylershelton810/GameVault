@@ -558,7 +558,7 @@ const GameClubCreate = ({
                 <Checkbox
                   id="isPrivate"
                   checked={isPrivate}
-                  onCheckedChange={setIsPrivate}
+                  onCheckedChange={(checked) => setIsPrivate(checked === true)}
                 />
                 <Label htmlFor="isPrivate" className="text-sm">
                   Make this club private (invite only)
