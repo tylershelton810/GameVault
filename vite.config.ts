@@ -1,16 +1,7 @@
 import path from "path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-// Conditional tempo import
-let tempo: any = () => ({});
-if (process.env.TEMPO === "true") {
-  try {
-    const tempoModule = await import("tempo-devtools/dist/vite");
-    tempo = tempoModule.tempo;
-  } catch (error) {
-    console.warn("Tempo plugin not available:", error);
-  }
-}
+import { tempo } from "tempo-devtools/dist/vite";
 
 const conditionalPlugins: [string, Record<string, any>][] = [];
 
@@ -26,13 +17,13 @@ export default defineConfig({
       ? "/"
       : process.env.VITE_BASE_PATH || "/",
   optimizeDeps: {
-    entries: ["src/main.tsx"],
+    entries: ["src/main.tsx", "src/tempobook/**/*"],
   },
   plugins: [
     react({
       plugins: conditionalPlugins,
     }),
-    ...(process.env.TEMPO === "true" ? [tempo()] : []),
+    tempo(),
   ],
   resolve: {
     preserveSymlinks: true,
@@ -41,8 +32,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,
-    allowedHosts: ["e0fe102a-7315-4e87-bb71-9528ed6b8054.canvases.tempo.build"],
+    // @ts-ignore
+    allowedHosts: true,
   },
   build: {
     rollupOptions: {

@@ -4,16 +4,9 @@ import App from "./App.tsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 
-// Conditional tempo devtools initialization
-if (import.meta.env.VITE_TEMPO === "true") {
-  try {
-    const { TempoDevtools } = await import("tempo-devtools");
-    TempoDevtools.init();
-  } catch (error) {
-    console.warn("Tempo devtools not available:", error);
-  }
-}
-        
+import { TempoDevtools } from "tempo-devtools";
+TempoDevtools.init();
+
 const basename = import.meta.env.BASE_URL;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
