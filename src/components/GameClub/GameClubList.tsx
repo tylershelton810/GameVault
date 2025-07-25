@@ -156,8 +156,24 @@ const GameClubList = ({
             ?.filter((m) => m.club_id === club.id)
             .slice(0, 4)
             .map((m) => m.users)
-            .filter(Boolean)
-            .flat() || [];
+            .filter(
+              (
+                user,
+              ): user is {
+                id: string;
+                full_name: string;
+                avatar_url?: string;
+              } =>
+                user &&
+                typeof user === "object" &&
+                "id" in user &&
+                "full_name" in user,
+            )
+            .map((user) => ({
+              id: user.id,
+              full_name: user.full_name,
+              avatar_url: user.avatar_url,
+            })) || [];
         const unreadCount =
           messageCounts?.filter((m) => m.club_id === club.id).length || 0;
 
