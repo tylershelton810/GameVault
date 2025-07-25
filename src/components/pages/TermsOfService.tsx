@@ -7,7 +7,7 @@ const TermsOfService = () => {
   const navigate = useNavigate();
 
   // Replace this with your actual HTML from Termly
-  const termsOfServiceHTML = `
+  const termsOfServiceHTML = ` 
     <!-- Paste your Termly terms of service HTML here -->
     <h1>Terms of Service</h1>
     <p>This is where your Termly terms of service HTML content will go.</p>
