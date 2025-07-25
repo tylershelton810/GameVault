@@ -157,17 +157,8 @@ const GameClubList = ({
             .slice(0, 4)
             .map((m) => m.users)
             .filter(
-              (
-                user,
-              ): user is {
-                id: string;
-                full_name: string;
-                avatar_url?: string;
-              } =>
-                user &&
-                typeof user === "object" &&
-                "id" in user &&
-                "full_name" in user,
+              (user): user is NonNullable<typeof user> =>
+                user !== null && user !== undefined,
             )
             .map((user) => ({
               id: user.id,
