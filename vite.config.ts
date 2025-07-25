@@ -1,7 +1,16 @@
 import path from "path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import { tempo } from "tempo-devtools/dist/vite";
+// Conditional tempo import
+let tempo: any = () => ({});
+if (process.env.TEMPO === "true") {
+  try {
+    const tempoModule = await import("tempo-devtools/dist/vite");
+    tempo = tempoModule.tempo;
+  } catch (error) {
+    console.warn("Tempo plugin not available:", error);
+  }
+}
 
 const conditionalPlugins: [string, Record<string, any>][] = [];
 
@@ -23,7 +32,7 @@ export default defineConfig({
     react({
       plugins: conditionalPlugins,
     }),
-    tempo(),
+    ...(process.env.TEMPO === "true" ? [tempo()] : []),
   ],
   resolve: {
     preserveSymlinks: true,

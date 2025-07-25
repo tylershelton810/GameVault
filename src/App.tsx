@@ -1,6 +1,15 @@
 import { Suspense } from "react";
 import { Navigate, Route, Routes, useRoutes } from "react-router-dom";
-import routes from "tempo-routes";
+// Conditional import for tempo routes
+let routes: any[] = [];
+if (import.meta.env.VITE_TEMPO === "true") {
+  try {
+    const tempoRoutes = await import("tempo-routes");
+    routes = tempoRoutes.default || [];
+  } catch (error) {
+    console.warn("Tempo routes not available:", error);
+  }
+}
 import LoginForm from "./components/auth/LoginForm";
 import SignUpForm from "./components/auth/SignUpForm";
 import Dashboard from "./components/pages/dashboard";
@@ -171,7 +180,9 @@ function AppRoutes() {
           }
         />
       </Routes>
-      {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
+      {import.meta.env.VITE_TEMPO === "true" &&
+        routes.length > 0 &&
+        useRoutes(routes)}
     </>
   );
 }
