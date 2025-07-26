@@ -61,6 +61,45 @@ import { Tables } from "@/types/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import confetti from "canvas-confetti";
 
+// AdSense Ad Component
+const AdSenseAd = ({
+  className = "",
+  slot = "test-slot",
+}: {
+  className?: string;
+  slot?: string;
+}) => {
+  const { user, isDonor } = useAuth();
+
+  useEffect(() => {
+    if (user && isDonor === false && window.adsbygoogle) {
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch (error) {
+        console.error("AdSense error:", error);
+      }
+    }
+  }, [user, isDonor]);
+
+  // Don't show ads for donors or unauthenticated users
+  if (!user || isDonor) {
+    return null;
+  }
+
+  return (
+    <div className={`${className}`}>
+      <ins
+        className="adsbygoogle"
+        style={{ display: "block" }}
+        data-ad-client="ca-pub-4421869297370753"
+        data-ad-slot={slot}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  );
+};
+
 type GameCollection = Tables<"game_collections">;
 type GameReview = Tables<"game_reviews">;
 
@@ -1104,9 +1143,9 @@ const GamePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {/* Left Column - Game Cover and Basic Info */}
-              <div className="lg:col-span-1 animate-in slide-in-from-left-4 duration-700">
+              <div className="lg:col-span-1 xl:col-span-1 animate-in slide-in-from-left-4 duration-700">
                 <Card className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group">
                   <div className="aspect-[3/4] relative bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group-hover:from-gray-100 group-hover:to-gray-200 transition-all duration-300">
                     {(() => {
@@ -1679,10 +1718,16 @@ const GamePage = () => {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Mobile/Tablet Ad - Shows below game collection block and above game details */}
+                <AdSenseAd
+                  className="xl:hidden mt-4 mb-4 p-4 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20"
+                  slot="mobile-game-detail"
+                />
               </div>
 
-              {/* Right Column - Game Details and Friends */}
-              <div className="lg:col-span-2 space-y-4 animate-in slide-in-from-right-4 duration-700 delay-200">
+              {/* Middle Column - Game Details and Friends */}
+              <div className="lg:col-span-2 xl:col-span-2 space-y-4 animate-in slide-in-from-right-4 duration-700 delay-200">
                 {/* Game Details */}
                 {isLoadingDetails ? (
                   <Card className="hover:shadow-lg transition-shadow duration-300">
@@ -2109,6 +2154,16 @@ const GamePage = () => {
                     )}
                   </CardContent>
                 </Card>
+              </div>
+
+              {/* Right Column - Desktop Ad */}
+              <div className="hidden xl:block xl:col-span-1 animate-in slide-in-from-right-4 duration-700 delay-400">
+                <div className="sticky top-6">
+                  <AdSenseAd
+                    className="p-4 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20 min-h-[600px] flex items-center justify-center"
+                    slot="desktop-game-detail-sidebar"
+                  />
+                </div>
               </div>
             </div>
           </div>

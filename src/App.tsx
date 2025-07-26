@@ -69,7 +69,21 @@ function AdSenseScript() {
         script.src =
           "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4421869297370753";
         script.crossOrigin = "anonymous";
+
+        // Enable test ads in development
+        if (import.meta.env.DEV) {
+          script.setAttribute("data-adbreak-test", "on");
+        }
+
         document.head.appendChild(script);
+
+        // Log for debugging
+        console.log("AdSense script loaded:", {
+          isDev: import.meta.env.DEV,
+          user: !!user,
+          isDonor,
+          pathname: location.pathname,
+        });
       }
     }
   }, [user, isDonor, location.pathname]);
