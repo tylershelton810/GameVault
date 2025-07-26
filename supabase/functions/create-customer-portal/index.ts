@@ -1,4 +1,5 @@
 import { corsHeaders } from "@shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -6,13 +7,35 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { customer_id } = await req.json();
-
-    if (!customer_id) {
+    // Get the authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: "Customer ID is required" }),
+        JSON.stringify({ error: "Authorization header is required" }),
         {
-          status: 400,
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user from JWT token
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        {
+          status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
@@ -29,9 +52,48 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Search for customer in Stripe using user_id metadata
+    const searchResponse = await fetch(
+      `https://api.stripe.com/v1/customers/search?query=metadata['user_id']:'${user.id}'`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+        },
+      },
+    );
+
+    if (!searchResponse.ok) {
+      const errorText = await searchResponse.text();
+      console.error("Stripe customer search error:", errorText);
+      return new Response(
+        JSON.stringify({ error: "Failed to search for customer" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const searchResult = await searchResponse.json();
+
+    if (!searchResult.data || searchResult.data.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "No Stripe customer found. Please make a purchase first to access billing management.",
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const customer = searchResult.data[0];
     const baseUrl = req.headers.get("origin") || "http://localhost:5173";
 
-    // Create customer portal session
+    // Create customer portal session with configuration
     const response = await fetch(
       "https://api.stripe.com/v1/billing_portal/sessions",
       {
@@ -41,8 +103,18 @@ Deno.serve(async (req) => {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          customer: customer_id,
+          customer: customer.id,
           return_url: `${baseUrl}/settings`,
+          // Add configuration for test mode
+          "configuration[business_profile][headline]": "GameVault Billing",
+          "configuration[business_profile][privacy_policy_url]": `${baseUrl}/privacy-policy`,
+          "configuration[business_profile][terms_of_service_url]": `${baseUrl}/terms-of-service`,
+          "configuration[features][payment_method_update][enabled]": "true",
+          "configuration[features][invoice_history][enabled]": "true",
+          "configuration[features][customer_update][enabled]": "true",
+          "configuration[features][customer_update][allowed_updates][]":
+            "email",
+          "configuration[features][customer_update][allowed_updates][]": "name",
         }),
       },
     );

@@ -571,10 +571,13 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          donation_expires_at: string | null
+          donation_started_at: string | null
           email: string | null
           full_name: string | null
           id: string
           image: string | null
+          is_donor: boolean | null
           name: string | null
           notification_preferences: Json | null
           onboarding_status: Json | null
@@ -587,10 +590,13 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          donation_expires_at?: string | null
+          donation_started_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
           image?: string | null
+          is_donor?: boolean | null
           name?: string | null
           notification_preferences?: Json | null
           onboarding_status?: Json | null
@@ -603,10 +609,13 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          donation_expires_at?: string | null
+          donation_started_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
           image?: string | null
+          is_donor?: boolean | null
           name?: string | null
           notification_preferences?: Json | null
           onboarding_status?: Json | null
