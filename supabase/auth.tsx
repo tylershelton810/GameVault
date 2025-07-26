@@ -12,6 +12,7 @@ type OnboardingStatus = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  isDonor: boolean | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (
     email: string,
@@ -36,11 +37,39 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDonor, setIsDonor] = useState<boolean | null>(null);
+
+  // Fetch user's donor status from the database
+  const fetchUserDonorStatus = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("is_donor")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching donor status:", error);
+        setIsDonor(false); // Default to false if error
+        return;
+      }
+
+      setIsDonor(data?.is_donor ?? false);
+    } catch (error) {
+      console.error("Error fetching donor status:", error);
+      setIsDonor(false);
+    }
+  };
 
   useEffect(() => {
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserDonorStatus(session.user.id);
+      } else {
+        setIsDonor(null);
+      }
       setLoading(false);
     });
 
@@ -49,6 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserDonorStatus(session.user.id);
+      } else {
+        setIsDonor(null);
+      }
       setLoading(false);
     });
 
@@ -257,6 +291,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         loading,
+        isDonor,
         signIn,
         signUp,
         signOut,

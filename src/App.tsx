@@ -1,5 +1,11 @@
-import { Suspense } from "react";
-import { Navigate, Route, Routes, useRoutes } from "react-router-dom";
+import { Suspense, useEffect } from "react";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useRoutes,
+  useLocation,
+} from "react-router-dom";
 import routes from "tempo-routes";
 import LoginForm from "./components/auth/LoginForm";
 import SignUpForm from "./components/auth/SignUpForm";
@@ -40,9 +46,41 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Component to handle AdSense script loading
+function AdSenseScript() {
+  const { user, isDonor } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Only load AdSense if user is authenticated, not a donor, and not on excluded pages
+    const excludedPaths = ["/", "/login", "/signup", "/account"];
+    const shouldLoadAds =
+      user && isDonor === false && !excludedPaths.includes(location.pathname);
+
+    if (shouldLoadAds) {
+      // Check if script is already loaded
+      const existingScript = document.querySelector(
+        'script[src*="pagead2.googlesyndication.com"]',
+      );
+
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.async = true;
+        script.src =
+          "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4421869297370753";
+        script.crossOrigin = "anonymous";
+        document.head.appendChild(script);
+      }
+    }
+  }, [user, isDonor, location.pathname]);
+
+  return null;
+}
+
 function AppRoutes() {
   return (
     <>
+      <AdSenseScript />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<LoginForm />} />
