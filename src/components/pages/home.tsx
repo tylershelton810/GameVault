@@ -777,6 +777,12 @@ export default function LandingPage() {
               >
                 Privacy Policy
               </Link>
+              <Link
+                to="/terms-of-service"
+                className="hover:text-foreground transition-colors"
+              >
+                Terms of Service
+              </Link>
             </div>
           </div>
         </div>
